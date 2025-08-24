@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SwingTrader</title>
+  <link rel="stylesheet" href="/css/main.css" />
+
+  <!-- Preload Firebase SDKs -->
+  <link rel="preload" href="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js" as="script" crossorigin="anonymous" />
+  <link rel="preload" href="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js" as="script" crossorigin="anonymous" />
+
+  <!-- Firebase config and main logic -->
+  <script type="module" src="/js/firebaseConfig.js" defer></script>
+  <script type="module" src="/js/main.js" defer></script>
+
+  <style>
+    .login-box {
+      display: none; /* Hidden by default, shown only if user is not authenticated */
+    }
+  </style>
+</head>
+<body>
+  <!-- AGENT-SAFE-ZONE: NAV -->
+  <div id="nav"></div>
+  <!-- END AGENT-SAFE-ZONE -->
+
+  <main>
+    <img src="logo1024.png" alt="SwingTrader Logo" id="logo" />
+    <div class="login-box">
+      <label for="emailInput">Email</label>
+      <input type="email" id="emailInput" />
+      <label for="passwordInput">Password</label>
+      <input type="password" id="passwordInput" />
+      <button id="loginBtn">Login</button>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 SwingTrader. All rights reserved.
+  </footer>
+</body>
+</html>
