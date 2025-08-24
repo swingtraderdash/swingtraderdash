@@ -1,0 +1,129 @@
+/* ─── Reset and Base Styles ─── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #ffffff;
+  color: #333;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ─── Layout Container ─── */
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px;
+}
+
+/* ─── Navigation Bar ─── */
+nav {
+  background-color: #2c3e50;
+  display: flex;
+  justify-content: center;
+  gap: 2em;
+  padding: 0.5em 0;
+  position: relative;
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 2em;
+}
+
+nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1.1em;
+  line-height: 1.1em;
+  transition: color 0.3s ease;
+  display: flex;
+  align-items: center;
+}
+
+nav a:hover,
+nav a.active {
+  color: #00aaff;
+}
+
+/* ─── Dropdown ─── */
+.dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-content {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: none;
+  flex-direction: column;
+  z-index: 10;
+  min-width: 140px;
+  padding: 0.5em 0;
+}
+
+.dropdown:hover .dropdown-content {
+  display: flex;
+}
+
+.dropdown-content a {
+  color: #2c3e50;
+  padding: 0.5em 0.75em;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 1em;
+  transition: color 0.3s ease;
+}
+
+.dropdown-content a:hover {
+  color: #00aaff;
+}
+
+/* ─── User Info ─── */
+#user-info {
+  position: absolute;
+  right: 1em;
+  top: 0.5em;
+  color: white;
+  font-size: 0.9em;
+}
+
+/* ─── Main Content ─── */
+main {
+  flex: 1;
+  padding: 1em;
+  text-align: center;
+}
+
+/* ─── Footer ─── */
+footer {
+  background-color: #2c3e50;
+  color: white;
+  text-align: center;
+  padding: 0.5em 0;
+  font-weight: 600;
+  font-size: 0.9em;
+}
+
+/* ─── Form Elements ─── */
+form input,
+form button {
+  display: block;
+  margin: 0.5em auto;
+  padding: 0.5em;
+  width: 200px;
+}
