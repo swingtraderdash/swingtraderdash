@@ -43,10 +43,12 @@ navContainer.innerHTML = `
       <li class="dropdown">
         <a href="#">Alerts</a>
         <ul class="dropdown-content">
-          <li><a href="/setalerts.html">Set</a></li>
+          <li><a href="/set-new.html">Set New</a></li>
+           <li><a href="/manage.html">Manage</a></li>
           <li><a href="/triggeredalerts.html">Triggered</a></li>
         </ul>
       </li>
+      <li><a href="/watchlist.html">Watch List</a></li>
       <li><a href="/logout.html">Logout</a></li>
     </ul>
   </nav>
