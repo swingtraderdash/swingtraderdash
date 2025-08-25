@@ -67,12 +67,12 @@ nav a.active {
 .dropdown-content {
   position: absolute;
   top: 100%;
-  left: -1em; /* 👈 Shift dropdown to the left */
+  left: -2em; /* 👈 Shift dropdown to the left */
   display: none;
   flex-direction: column;
   z-index: 10;
   min-width: 100px;
-  padding: 2.5em;
+  padding: 1.5em;
   margin: 0;
   gap: 0;
 }
@@ -90,7 +90,7 @@ nav a.active {
   text-decoration: none;
   font-weight: bold;
   word-spacing: 0.1em;
-  font-size: 1.5em;
+  font-size: 1.0em;
   transition: color 0.3s ease;
 }
 
