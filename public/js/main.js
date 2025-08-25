@@ -21,9 +21,40 @@ const loginBtn      = document.getElementById("loginBtn");
 const emailInput    = document.getElementById("emailInput");
 const passwordInput = document.getElementById("passwordInput");
 
+// Log currentUser immediately
+console.log("ℹ️ auth.currentUser before listener:", auth.currentUser);
+
+// Auth state listener (with extra callbacks)
+console.log("🔍 [STEP 2] about to attach auth listener with auth:", auth);
+onAuthStateChanged(
+  auth,
+  (user) => {
+    console.log("🔍 [STEP 3] onAuthStateChanged callback — user is:", user);
+    if (user) {
+      console.log("👤 Authenticated as:", user.email);
+      loginBox && (loginBox.style.display = "none");
+      injectNav();
+    } else {
+      console.log("👤 No user authenticated");
+      loginBox && (loginBox.style.display = "block");
+    }
+  },
+  (error) => {
+    console.error("❌ onAuthStateChanged error:", error);
+  },
+  () => {
+    console.log("✅ onAuthStateChanged listener subscribed and ready");
+  }
+);
+
+// schedule a delayed log to see if currentUser changes
+setTimeout(() => {
+  console.log("⏲️ [DELAYED] auth.currentUser after 2s:", auth.currentUser);
+}, 2000);
+
 // Login handler
 loginBtn?.addEventListener("click", async () => {
-  console.log("🛠️ [STEP 2] loginBtn clicked");
+  console.log("🛠️ [STEP 4] loginBtn clicked");
   const email    = emailInput.value;
   const password = passwordInput.value;
 
@@ -39,7 +70,6 @@ loginBtn?.addEventListener("click", async () => {
 // Nav injection logic
 function injectNav() {
   console.log("[injectNav] Fired");
-
   const waitForNav = setInterval(() => {
     const navContainer = document.getElementById("nav");
     if (navContainer) {
@@ -66,23 +96,4 @@ function injectNav() {
       console.warn("[injectNav] ⏳ Waiting for #nav to appear...");
     }
   }, 250);
-}
-
-// Auth state listener
-console.log("🔍 [STEP 2] about to attach auth listener with auth:", auth);
-
-try {
-  onAuthStateChanged(auth, (user) => {
-    console.log("🔍 [STEP 3] onAuthStateChanged callback fired — user value is:", user);
-    if (user) {
-      console.log("👤 Authenticated as:", user.email);
-      loginBox && (loginBox.style.display = "none");
-      injectNav();
-    } else {
-      console.log("👤 No user authenticated");
-      loginBox && (loginBox.style.display = "block");
-    }
-  });
-} catch (err) {
-  console.error("❌ onAuthStateChanged threw an error:", err);
 }
