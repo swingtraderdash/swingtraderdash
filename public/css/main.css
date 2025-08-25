@@ -72,7 +72,7 @@ nav a.active {
   display: none;
   flex-direction: column;
   z-index: 10;
-  min-width: 140px;
+  min-width: 110px;
   padding: 0.5em 0;
 }
 
