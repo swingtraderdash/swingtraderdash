@@ -16,7 +16,7 @@ header {
 }
 
 nav {
-  background-color: #1e3a5f;
+  background-color: #2980b9; /* Updated to match login button */
   padding: 0.5rem;
   display: flex;
   justify-content: center;
@@ -38,4 +38,4 @@ nav a:hover {
   margin: 2rem auto;
   padding: 1rem;
   background-color: white;
-  }
+}
