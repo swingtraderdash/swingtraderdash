@@ -57,6 +57,7 @@ nav a.active {
 
 /* ─── Dropdown ─── */
 /* ─── Dropdown ─── */
+/* ─── Dropdown ─── */
 .dropdown {
   position: relative;
   display: flex;
@@ -66,7 +67,7 @@ nav a.active {
 .dropdown-content {
   position: absolute;
   top: 100%;
-  left: 0;
+  left: -1em; /* 👈 Shift dropdown to the left */
   display: none;
   flex-direction: column;
   z-index: 10;
@@ -91,7 +92,7 @@ nav a.active {
   word-spacing: 0.1em;
   font-size: 1em;
   transition: color 0.3s ease;
-  }
+}
 
 .dropdown-content a:hover {
   color: #00aaff;
