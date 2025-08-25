@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (navContainer) {
         clearInterval(waitForNav);
         navContainer.innerHTML = `
-          <nav class="main-nav">
+          <nav>
             <ul>
               <li><a href="/index.html">Home</a></li> 
               <li class="dropdown">
