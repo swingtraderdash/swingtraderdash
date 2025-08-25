@@ -2,7 +2,8 @@
 
 console.log("🛠️ [STEP 1] main.js loaded");
 
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { app } from "./firebaseConfig.js";
 
 // Firebase Auth instance
@@ -10,14 +11,15 @@ const auth = getAuth(app);
 console.log("✅ Firebase initialized");
 
 // DOM elements
-const loginBox = document.querySelector(".login-box");
-const loginBtn = document.getElementById("loginBtn");
-const emailInput = document.getElementById("emailInput");
-const passwordInput = document.getElementById("passwordInput");
+const loginBox     = document.querySelector(".login-box");
+const loginBtn     = document.getElementById("loginBtn");
+const emailInput   = document.getElementById("emailInput");
+const passwordInput= document.getElementById("passwordInput");
 
 // Login handler
 loginBtn?.addEventListener("click", async () => {
-  const email = emailInput.value;
+  console.log("🛠️ [STEP 2] loginBtn clicked");  // ← Instrumented click
+  const email    = emailInput.value;
   const password = passwordInput.value;
 
   try {
@@ -41,7 +43,7 @@ function injectNav() {
       navContainer.innerHTML = `
         <nav>
           <ul>
-            <li><a href="/index.html">Home</a></li> 
+            <li><a href="/index.html">Home</a></li>
             <li class="dropdown">
               <a href="#">Alerts</a>
               <ul class="dropdown-content">
@@ -65,13 +67,11 @@ function injectNav() {
 // Auth state listener
 console.log("🔍 [STEP 2] about to attach auth listener");
 onAuthStateChanged(auth, (user) => {
+  console.log("🔍 [STEP 3] onAuthStateChanged callback fired — user is:", user);  // ← Instrumented callback
+
   if (user) {
     console.log("👤 Authenticated as:", user.email);
-
-    // Hide login box
     if (loginBox) loginBox.style.display = "none";
-
-    // Inject nav bar
     injectNav();
   } else {
     console.log("👤 No user authenticated");
