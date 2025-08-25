@@ -48,7 +48,7 @@ navContainer.innerHTML = `
           <li><a href="/triggeredalerts.html">Triggered</a></li>
         </ul>
       </li>
-      <li><a href="/watchlist.html">Watch List</a></li>
+      <li><a href="/watchlist.html">Watchlist</a></li>
       <li><a href="/logout.html">Logout</a></li>
     </ul>
   </nav>
