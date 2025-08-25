@@ -94,8 +94,7 @@ nav a.active {
   word-spacing: 0.1em;
   font-size: 1em;
   transition: color 0.3s ease;
-  border: 1px solid red; /* TEMP: helps visualize spacing */
-}
+  }
 
 .dropdown-content a:hover {
   color: #00aaff;
