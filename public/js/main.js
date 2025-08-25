@@ -1,5 +1,7 @@
 // File: /public/js/main.js
 
+console.log("🛠️ [STEP 1] main.js loaded");
+
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { app } from "./firebaseConfig.js";
 
