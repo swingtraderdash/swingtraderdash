@@ -36,15 +36,23 @@ function injectNav() {
 
     if (navContainer) {
       clearInterval(waitForNav);
+navContainer.innerHTML = `
+  <nav class="main-nav">
+    <ul>
+      <li><a href="/index.html">Home</a></li> 
+      <li class="dropdown">
+        <a href="#">Alerts ▾</a>
+        <ul class="dropdown-content">
+          <li><a href="/setalerts.html">Set</a></li>
+          <li><a href="/triggeredalerts.html">Triggered</a></li>
+        </ul>
+      </li>
+      <li><a href="/logout.html">Logout</a></li>
+    </ul>
+  </nav>
+`;
 
-      navContainer.innerHTML = `
-        <nav class="main-nav">
-          <ul>
-            <li><a href="/index.html">Home</a></li>        
-                  <li><a href="/logout.html">Logout</a></li>
-          </ul>
-        </nav>
-      `;
+     
 
       console.log("[injectNav] ✅ Nav injected");
     } else {
