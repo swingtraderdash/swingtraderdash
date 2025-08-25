@@ -40,13 +40,19 @@ function injectNav() {
       navContainer.innerHTML = `
         <nav class="main-nav">
           <ul>
-            <li><a href="/index.html">Home</a></li>        
-                  <li><a href="/logout.html">Logout</a></li>
+            <li><a href="/index.html">Home</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropbtn">Alerts</a>
+              <ul class="dropdown-content">
+                <li><a href="/alerts/set-new.html">Set New</a></li>
+              </ul>
+            </li>
+            <li><a href="/logout.html">Logout</a></li>
           </ul>
         </nav>
       `;
 
-      console.log("[injectNav] ✅ Nav injected");
+      console.log("[injectNav] ✅ Nav with Alerts dropdown injected");
     } else {
       console.warn("[injectNav] ⏳ Waiting for #nav to appear...");
     }
