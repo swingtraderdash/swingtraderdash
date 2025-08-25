@@ -1,6 +1,11 @@
 // File: /public/js/firebaseConfig.js
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  getAuth,
+  setPersistence,
+  browserLocalPersistence
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBIUbM6ZSPGDh9AxU2ySN4Ldtzpka5RpCg",
@@ -11,10 +16,16 @@ const firebaseConfig = {
   appId: "1:27892139023:web:10f0679e33eb93b3744f7a"
 };
 
+export async function initFirebase() {
+  // initialize the app
+  const app = initializeApp(firebaseConfig);
 
-export const app = initializeApp(firebaseConfig);
+  // initialize auth and await persistence
+  const auth = getAuth(app);
+  console.log("🔧 [INIT] Setting auth persistence to local");
+  await setPersistence(auth, browserLocalPersistence);
+  console.log("✅ [INIT] Persistence set to local");
 
-const auth = getAuth(app);
-setPersistence(auth, browserLocalPersistence)
-  .then(() => console.log("[Firebase] 🧠 Session persistence set to local"))
-  .catch((err) => console.error("[Firebase] ❌ Failed to set persistence:", err));
+  return { app, auth };
+}
+
