@@ -1,70 +1,52 @@
-// File: /public/js/main.js
+/* main.css — branded base layout */
 
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { app } from "./firebaseConfig.js";
-
-// Firebase Auth instance
-const auth = getAuth(app);
-console.log("✅ Firebase initialized");
-
-// DOM elements
-const loginBox = document.querySelector(".login-box");
-const loginBtn = document.getElementById("loginBtn");
-const emailInput = document.getElementById("emailInput");
-const passwordInput = document.getElementById("passwordInput");
-
-// Login handler
-loginBtn?.addEventListener("click", async () => {
-  const email = emailInput.value;
-  const password = passwordInput.value;
-
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    console.log("✅ Login successful:", userCredential.user.email);
-  } catch (error) {
-    console.error("❌ Login failed:", error.message);
-    alert("Login failed: " + error.message);
-  }
-});
-
-// Nav injection logic
-function injectNav() {
-  console.log("[injectNav] Fired");
-
-  const waitForNav = setInterval(() => {
-    const navContainer = document.getElementById("nav");
-
-    if (navContainer) {
-      clearInterval(waitForNav);
-
-      navContainer.innerHTML = `
-        <nav class="main-nav">
-          <ul>
-            <li><a href="/index.html">Home</a></li>
-            <li><a href="/logout.html">Logout</a></li>
-          </ul>
-        </nav>
-      `;
-
-      console.log("[injectNav] ✅ Nav injected");
-    } else {
-      console.warn("[injectNav] ⏳ Waiting for #nav to appear...");
-    }
-  }, 250); // Check every 250ms
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #ffffff;
+  color: #333;
 }
 
-// Auth state listener
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    console.log("👤 Authenticated as:", user.email);
+header {
+  background-color: #0a2540;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
 
-    // Hide login box
-    if (loginBox) loginBox.style.display = "none";
+nav {
+  background-color: #1e3a5f;
+  padding: 0.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
 
-    // Inject nav bar
-    injectNav();
-  } else {
-    console.log("👤 No user authenticated");
-    if (loginBox) loginBox.style.display = "block";
-  }
-});
+nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+.container {
+  max-width: 960px;
+  margin: 2rem auto;
+  padding: 1rem;
+  background-color: white;
+}
+
+/* ✅ Footer styling restored from old site */
+footer {
+  background-color: #2c3e50;
+  color: white;
+  text-align: center;
+  padding: 0.5em 0;
+  font-weight: 600;
+  font-size: 0.9em;
+}
