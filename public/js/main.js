@@ -63,6 +63,7 @@ function injectNav() {
 }
 
 // Auth state listener
+console.log("🔍 [STEP 2] about to attach auth listener");
 onAuthStateChanged(auth, (user) => {
   if (user) {
     console.log("👤 Authenticated as:", user.email);
