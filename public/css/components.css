@@ -1,6 +1,6 @@
 /* 🔷 Global Navbar */
 nav {
-  background-color: #111;
+  background-color: #2980b9;
   color: white;
   display: flex;
   justify-content: center;
@@ -22,7 +22,7 @@ nav a:hover {
 
 /* 🔷 Footer */
 footer {
-  background-color: #111;
+  background-color: #2980b9;
   color: white;
   text-align: center;
   padding: 1rem;
