@@ -2,23 +2,28 @@
 
 console.log("🛠️ [STEP 1] main.js loaded");
 
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged }
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
 import { app } from "./firebaseConfig.js";
+console.log("🔌 Imported Firebase app instance:", app);
 
 // Firebase Auth instance
 const auth = getAuth(app);
-console.log("✅ Firebase initialized");
+console.log("✅ Firebase initialized — auth instance:", auth);
 
 // DOM elements
-const loginBox     = document.querySelector(".login-box");
-const loginBtn     = document.getElementById("loginBtn");
-const emailInput   = document.getElementById("emailInput");
-const passwordInput= document.getElementById("passwordInput");
+const loginBox      = document.querySelector(".login-box");
+const loginBtn      = document.getElementById("loginBtn");
+const emailInput    = document.getElementById("emailInput");
+const passwordInput = document.getElementById("passwordInput");
 
 // Login handler
 loginBtn?.addEventListener("click", async () => {
-  console.log("🛠️ [STEP 2] loginBtn clicked");  // ← Instrumented click
+  console.log("🛠️ [STEP 2] loginBtn clicked");
   const email    = emailInput.value;
   const password = passwordInput.value;
 
@@ -37,7 +42,6 @@ function injectNav() {
 
   const waitForNav = setInterval(() => {
     const navContainer = document.getElementById("nav");
-
     if (navContainer) {
       clearInterval(waitForNav);
       navContainer.innerHTML = `
@@ -61,20 +65,24 @@ function injectNav() {
     } else {
       console.warn("[injectNav] ⏳ Waiting for #nav to appear...");
     }
-  }, 250); // Check every 250ms
+  }, 250);
 }
 
 // Auth state listener
-console.log("🔍 [STEP 2] about to attach auth listener");
-onAuthStateChanged(auth, (user) => {
-  console.log("🔍 [STEP 3] onAuthStateChanged callback fired — user is:", user);  // ← Instrumented callback
+console.log("🔍 [STEP 2] about to attach auth listener with auth:", auth);
 
-  if (user) {
-    console.log("👤 Authenticated as:", user.email);
-    if (loginBox) loginBox.style.display = "none";
-    injectNav();
-  } else {
-    console.log("👤 No user authenticated");
-    if (loginBox) loginBox.style.display = "block";
-  }
-});
+try {
+  onAuthStateChanged(auth, (user) => {
+    console.log("🔍 [STEP 3] onAuthStateChanged callback fired — user value is:", user);
+    if (user) {
+      console.log("👤 Authenticated as:", user.email);
+      loginBox && (loginBox.style.display = "none");
+      injectNav();
+    } else {
+      console.log("👤 No user authenticated");
+      loginBox && (loginBox.style.display = "block");
+    }
+  });
+} catch (err) {
+  console.error("❌ onAuthStateChanged threw an error:", err);
+}
