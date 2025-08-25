@@ -20,6 +20,30 @@ nav a:hover {
   color: #00bfff; /* Bright blue hover */
 }
 
+/* 🔷 Injected Nav Structure Fix */
+.main-nav ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  justify-content: center;
+}
+
+.main-nav li {
+  margin: 0 1rem;
+}
+
+.main-nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+.main-nav a:hover {
+  color: #00bfff;
+}
+
 /* 🔷 Footer */
 footer {
   background-color: #111;
@@ -70,5 +94,14 @@ footer {
 
   .card {
     margin: 10px 0;
+  }
+
+  .main-nav ul {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .main-nav li {
+    margin: 0.5rem 0;
   }
 }
