@@ -67,9 +67,6 @@ nav a.active {
   position: absolute;
   top: 100%;
   left: 0;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   display: none;
   flex-direction: column;
   z-index: 10;
