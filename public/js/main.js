@@ -19,10 +19,10 @@ console.log("🔌 [STEP 1] main.js loaded");
     console.log("🔍 [STEP 3] onAuthStateChanged callback — user is:", user);
     if (user) {
       console.log("👤 Authenticated as:", user.email);
-      injectNav(true);
+      injectNav(user.uid);
     } else {
       console.log("👤 No user authenticated");
-      injectNav(false);
+      injectNav(null);
     }
   });
 
@@ -31,8 +31,8 @@ console.log("🔌 [STEP 1] main.js loaded");
     .getElementById("loginBtn")
     .addEventListener("click", async () => {
       console.log("🛠️ [STEP 4] loginBtn clicked");
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
+      const email = document.getElementById("emailInput").value;
+      const password = document.getElementById("passwordInput").value;
 
       try {
         const cred = await signInWithEmailAndPassword(auth, email, password);
