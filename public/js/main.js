@@ -53,6 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </ul>
               </li>
               <li><a href="/watchlist.html">Watchlist</a></li>
+              <li><a href="/blanktemplate.html">Blank</a></li>
               <li><a href="/logout.html">Logout</a></li>
             </ul>
           </nav>
