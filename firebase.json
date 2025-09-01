@@ -8,6 +8,10 @@
     ],
     "rewrites": [
       {
+        "source": "/blanktemplate.html",
+        "function": "pageGatekeeper"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
