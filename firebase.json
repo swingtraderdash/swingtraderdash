@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "swingtraderdash/public",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",
