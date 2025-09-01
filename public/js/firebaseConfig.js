@@ -1,3 +1,5 @@
+console.log("[firebaseConfig.js] ✅ Loaded");
+
 // File: /public/js/firebaseConfig.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
