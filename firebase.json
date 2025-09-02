@@ -12,6 +12,10 @@
         "function": "pageGatekeeper"
       },
       {
+        "source": "/trialpage",
+        "function": "trialPageGatekeeper"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
@@ -34,4 +38,3 @@
     }
   ]
 }
-
