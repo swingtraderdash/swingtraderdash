@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <ul>
               <li><a href="/index.html">Home</a></li> 
               <li><a href="/watchlist.html">Watchlist</a></li>
-              <li><a href="/trialpage.html">Trial</a></li>
+              <li><a href="/trialpage">Trial</a></li>
               <li class="dropdown">
                 <a href="#">Alerts</a>
                 <ul class="dropdown-content">
