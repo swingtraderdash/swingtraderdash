@@ -9,6 +9,7 @@ setGlobalOptions({ maxInstances: 10 });
 // 🔐 Unified gatekeeper for homepage and trial page
 exports.pageGatekeeper = onRequest((req, res) => {
   logger.info(`Incoming request path: ${req.path}`, { structuredData: true });
+  logger.info(`Cookies received: ${req.headers.cookie}`, { structuredData: true });
 
   // Simulated login check — replace with real auth later
   const isLoggedIn = req.headers.cookie && req.headers.cookie.includes("auth=true");
