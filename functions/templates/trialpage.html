@@ -5,10 +5,28 @@
   <style>
     body { font-family: sans-serif; padding: 2rem; background: #f9f9f9; }
     h1 { color: #333; }
+    #trial-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: #ffcc00;
+      color: #000;
+      font-weight: bold;
+      padding: 0.5rem;
+      text-align: center;
+      z-index: 9999;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
   </style>
+  <script>
+    console.log("🧪 Trial Page Loaded");
+  </script>
 </head>
 <body>
+  <div id="trial-banner">✅ Trial Page Confirmed</div>
   <h1>Welcome to the Trial Page</h1>
   <p>This content is only visible to logged-in users.</p>
 </body>
 </html>
+
