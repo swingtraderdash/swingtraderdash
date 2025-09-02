@@ -1,41 +1,81 @@
-// File: /public/js/main.js
+// File: /public/js/injectNav.js
 
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { app } from "./firebaseConfig.js";
-import { injectNav } from "./injectNav.js";
 
-// Firebase Auth instance
-const auth = getAuth(app);
-console.log("✅ Firebase initialized");
+export function injectNav() {
+  console.log("[injectNav] Fired");
 
-// DOM elements
-const loginBox = document.querySelector(".login-box");
-const loginBtn = document.getElementById("loginBtn");
-const emailInput = document.getElementById("emailInput");
-const passwordInput = document.getElementById("passwordInput");
+  const waitForNav = setInterval(() => {
+    const navContainer = document.getElementById("nav");
 
-// Login handler
-loginBtn?.addEventListener("click", async () => {
-  const email = emailInput.value;
-  const password = passwordInput.value;
+    if (navContainer) {
+      clearInterval(waitForNav);
 
-  try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    console.log("✅ Login successful:", userCredential.user.email);
-  } catch (error) {
-    console.error("❌ Login failed:", error.message);
-    alert("Login failed: " + error.message);
-  }
-});
+      navContainer.innerHTML = `
+        <nav>
+          <ul>
+            <li><a href="/index.html">Home</a></li> 
+            <li><a href="/watchlist.html">Watchlist</a></li>
+            <li><a href="/trialpage.html" id="trialLink">Trial</a></li>
+            <li class="dropdown">
+              <a href="#">Alerts</a>
+              <ul class="dropdown-content">
+                <li><a href="/set-new.html">Set New</a></li>
+                <li><a href="/manage.html">Manage</a></li>
+                <li><a href="/triggeredalerts.html">Triggered</a></li>
+              </ul>
+            </li>              
+            <li><a href="/blanktemplate.html">Blank</a></li>
+            <li><a href="/logout.html">Logout</a></li>
+          </ul>
+        </nav>
+      `;
+      console.log("[injectNav] ✅ Nav injected");
 
-// Auth state listener
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    console.log("👤 Authenticated as:", user.email);
-    if (loginBox) loginBox.style.display = "none";
-    injectNav(user.uid); // ✅ Modular, branded, UID-aware
-  } else {
-    console.log("👤 No user authenticated");
-    if (loginBox) loginBox.style.display = "block";
-  }
-});
+      // Secure Trial link handler
+      const waitForTrialLink = setInterval(() => {
+        const trialLink = document.getElementById("trialLink");
+        const mainContent = document.getElementById("mainContent"); // Adjust if needed
+
+        if (trialLink && mainContent) {
+          clearInterval(waitForTrialLink);
+
+          trialLink.addEventListener("click", (e) => {
+            e.preventDefault();
+
+            const auth = getAuth(app);
+            const user = auth.currentUser;
+
+            if (user) {
+              user.getIdToken().then(token => {
+                fetch("/trialpage", {
+                  method: "GET",
+                  headers: {
+                    Authorization: `Bearer ${token}`
+                  }
+                })
+                .then(response => response.text())
+                .then(html => {
+                  console.log("✅ Trial page loaded");
+                  mainContent.innerHTML = html;
+                })
+                .catch(error => {
+                  console.error("❌ Error loading trial page:", error);
+                });
+              });
+            } else {
+              console.warn("🚫 User not authenticated");
+            }
+          });
+
+          console.log("[injectNav] 🔐 Trial link secured");
+        } else {
+          console.warn("[injectNav] ⏳ Waiting for Trial link or #mainContent...");
+        }
+      }, 250);
+    } else {
+      console.warn("[injectNav] ⏳ Waiting for #nav to appear...");
+    }
+  }, 250);
+}
