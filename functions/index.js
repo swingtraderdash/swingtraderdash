@@ -6,28 +6,14 @@ const path = require("path");
 
 setGlobalOptions({ maxInstances: 10 });
 
-// 🔐 Existing homepage gatekeeper — leave untouched
+// 🔐 Unified gatekeeper for homepage and trial page
 exports.pageGatekeeper = onRequest((req, res) => {
   logger.info(`Incoming request path: ${req.path}`, { structuredData: true });
 
-  if (req.path === "/newpage.html") {
-    logger.info("✅ Valid page hit detected", { structuredData: true });
-    res.status(200).send("Access granted");
-  } else {
-    logger.warn("🚫 Unauthorized access attempt", { structuredData: true });
-    res.status(403).send("Access denied");
-  }
-});
-
-// 🧪 New trial page gatekeeper — fully isolated
-exports.trialPageGatekeeper = onRequest((req, res) => {
-  logger.info(`[TrialPage] Incoming request`, { structuredData: true });
-
   // Simulated login check — replace with real auth later
   const isLoggedIn = req.headers.cookie && req.headers.cookie.includes("auth=true");
-
   if (!isLoggedIn) {
-    logger.warn("[TrialPage] 🚫 Access denied");
+    logger.warn("🚫 Access denied — not logged in", { structuredData: true });
     return res.status(403).send(`
       <!DOCTYPE html>
       <html>
@@ -41,8 +27,14 @@ exports.trialPageGatekeeper = onRequest((req, res) => {
   }
 
   // ✅ Serve the gated trial page
-  const htmlPath = path.join(__dirname, "templates", "trialpage.html");
-  const html = fs.readFileSync(htmlPath, "utf8");
-  logger.info("[TrialPage] ✅ Access granted");
-  res.status(200).send(html);
+  if (req.path === "/trialpage") {
+    const htmlPath = path.join(__dirname, "templates", "trialpage.html");
+    const html = fs.readFileSync(htmlPath, "utf8");
+    logger.info("✅ Access granted to /trialpage", { structuredData: true });
+    return res.status(200).send(html);
+  }
+
+  // 🚫 All other paths denied
+  logger.warn("🚫 Unauthorized access attempt to unknown path", { structuredData: true });
+  res.status(403).send("Access denied");
 });
