@@ -12,6 +12,10 @@
         "function": "pageGatekeeper"
       },
       {
+        "source": "/trialpage.html",
+        "function": "pageGatekeeper"
+      },
+      {
         "source": "/trialpage",
         "function": "pageGatekeeper"
       },
