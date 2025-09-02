@@ -1,5 +1,4 @@
 // File: /public/js/main.js
-
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { app } from "./firebaseConfig.js";
 
@@ -25,6 +24,9 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log("✅ Login successful:", userCredential.user.email);
+
+      // ✅ Set login cookie for server-side gatekeeper
+      document.cookie = "auth=true; path=/";
     } catch (error) {
       console.error("❌ Login failed:", error.message);
       alert("Login failed: " + error.message);
@@ -45,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <ul>
               <li><a href="/index.html">Home</a></li> 
               <li><a href="/watchlist.html">Watchlist</a></li>
-              <li><a href="/trialpage">Trial</a></li>
+              <li><a href="/trialpage.html">Trial</a></li>
               <li class="dropdown">
                 <a href="#">Alerts</a>
                 <ul class="dropdown-content">
@@ -82,3 +84,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
