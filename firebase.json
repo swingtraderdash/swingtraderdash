@@ -16,6 +16,10 @@
         "function": "pageGatekeeper"
       },
       {
+        "source": "/trialpage/**",
+        "function": "pageGatekeeper"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
