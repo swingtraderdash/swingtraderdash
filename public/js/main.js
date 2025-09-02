@@ -44,6 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
           <nav>
             <ul>
               <li><a href="/index.html">Home</a></li> 
+              <li><a href="/watchlist.html">Watchlist</a></li>
+              <li><a href="/trialpage.html">Trial</a></li>
               <li class="dropdown">
                 <a href="#">Alerts</a>
                 <ul class="dropdown-content">
@@ -51,8 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
                   <li><a href="/manage.html">Manage</a></li>
                   <li><a href="/triggeredalerts.html">Triggered</a></li>
                 </ul>
-              </li>
-              <li><a href="/watchlist.html">Watchlist</a></li>
+              </li>              
               <li><a href="/blanktemplate.html">Blank</a></li>
               <li><a href="/logout.html">Logout</a></li>
             </ul>
