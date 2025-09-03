@@ -12,58 +12,72 @@ setGlobalOptions({ maxInstances: 10 });
 exports.pageGatekeeper = onRequest(async (req, res) => {
   logger.info(`Incoming request path: ${req.path}`, { structuredData: true });
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    logger.warn("🚫 Missing or invalid Authorization header", { structuredData: true });
-    return res.status(403).send(`
-      <!DOCTYPE html>
-      <html>
-        <head><title>Access Denied</title></head>
-        <body>
-          <h1>Access Denied</h1>
-          <p>No valid token provided. You must be logged in to view this page.</p>
-        </body>
-      </html>
-    `);
+  // 🔍 Check for session cookie first (used in Firebase Hosting rewrites)
+  const sessionCookie = req.cookies?.__session;
+  let decodedToken;
+
+  if (sessionCookie) {
+    try {
+      decodedToken = await admin.auth().verifySessionCookie(sessionCookie, true);
+      logger.info(`✅ Session cookie verified for UID: ${decodedToken.uid}`, { structuredData: true });
+    } catch (error) {
+      logger.warn("❌ Invalid session cookie", { error });
+    }
   }
 
-  const idToken = authHeader.split("Bearer ")[1];
-
-  try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    logger.info(`✅ Token verified for UID: ${decodedToken.uid}`, { structuredData: true });
-
-    // Dynamically resolve page name from request path
-    const pageName = req.path.replace("/", "") + ".html";
-    const htmlPath = path.join(__dirname, "templates", pageName);
-
-    if (fs.existsSync(htmlPath)) {
-      const html = fs.readFileSync(htmlPath, "utf8");
-      logger.info(`✅ Access granted to ${pageName}`, { structuredData: true });
-      return res.status(200).send(html);
-    } else {
-      logger.warn(`🚫 Requested page not found: ${pageName}`, { structuredData: true });
-      return res.status(404).send(`
+  // 🔍 Fallback to Authorization header if no valid session cookie
+  if (!decodedToken) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      logger.warn("🚫 Missing or invalid Authorization header", { structuredData: true });
+      return res.status(403).send(`
         <!DOCTYPE html>
         <html>
-          <head><title>Page Not Found</title></head>
+          <head><title>Access Denied</title></head>
           <body>
-            <h1>404 - Page Not Found</h1>
-            <p>The requested page does not exist.</p>
+            <h1>Access Denied</h1>
+            <p>No valid token provided. You must be logged in to view this page.</p>
           </body>
         </html>
       `);
     }
 
-  } catch (error) {
-    logger.error("❌ Token verification failed", { error });
-    return res.status(403).send(`
+    const idToken = authHeader.split("Bearer ")[1];
+    try {
+      decodedToken = await admin.auth().verifyIdToken(idToken);
+      logger.info(`✅ Token verified for UID: ${decodedToken.uid}`, { structuredData: true });
+    } catch (error) {
+      logger.error("❌ Token verification failed", { error });
+      return res.status(403).send(`
+        <!DOCTYPE html>
+        <html>
+          <head><title>Access Denied</title></head>
+          <body>
+            <h1>Access Denied</h1>
+            <p>Token verification failed. Please log in again.</p>
+          </body>
+        </html>
+      `);
+    }
+  }
+
+  // ✅ Auth confirmed — serve the requested page
+  const pageName = req.path.replace("/", "") + ".html";
+  const htmlPath = path.join(__dirname, "templates", pageName);
+
+  if (fs.existsSync(htmlPath)) {
+    const html = fs.readFileSync(htmlPath, "utf8");
+    logger.info(`✅ Access granted to ${pageName}`, { structuredData: true });
+    return res.status(200).send(html);
+  } else {
+    logger.warn(`🚫 Requested page not found: ${pageName}`, { structuredData: true });
+    return res.status(404).send(`
       <!DOCTYPE html>
       <html>
-        <head><title>Access Denied</title></head>
+        <head><title>Page Not Found</title></head>
         <body>
-          <h1>Access Denied</h1>
-          <p>Token verification failed. Please log in again.</p>
+          <h1>404 - Page Not Found</h1>
+          <p>The requested page does not exist.</p>
         </body>
       </html>
     `);
