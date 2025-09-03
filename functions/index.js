@@ -8,7 +8,7 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 setGlobalOptions({ maxInstances: 10 });
 
-// 🔐 Unified gatekeeper for homepage and trial page
+// 🔐 Unified gatekeeper for all token-protected pages
 exports.pageGatekeeper = onRequest(async (req, res) => {
   logger.info(`Incoming request path: ${req.path}`, { structuredData: true });
 
@@ -33,15 +33,27 @@ exports.pageGatekeeper = onRequest(async (req, res) => {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     logger.info(`✅ Token verified for UID: ${decodedToken.uid}`, { structuredData: true });
 
-    if (req.path === "/trialpage") {
-      const htmlPath = path.join(__dirname, "templates", "trialpage.html");
-      const html = fs.readFileSync(htmlPath, "utf8");
-      logger.info("✅ Access granted to /trialpage", { structuredData: true });
-      return res.status(200).send(html);
-    }
+    // Dynamically resolve page name from request path
+    const pageName = req.path.replace("/", "") + ".html";
+    const htmlPath = path.join(__dirname, "templates", pageName);
 
-    logger.warn("🚫 Unauthorized access attempt to unknown path", { structuredData: true });
-    return res.status(403).send("Access denied");
+    if (fs.existsSync(htmlPath)) {
+      const html = fs.readFileSync(htmlPath, "utf8");
+      logger.info(`✅ Access granted to ${pageName}`, { structuredData: true });
+      return res.status(200).send(html);
+    } else {
+      logger.warn(`🚫 Requested page not found: ${pageName}`, { structuredData: true });
+      return res.status(404).send(`
+        <!DOCTYPE html>
+        <html>
+          <head><title>Page Not Found</title></head>
+          <body>
+            <h1>404 - Page Not Found</h1>
+            <p>The requested page does not exist.</p>
+          </body>
+        </html>
+      `);
+    }
 
   } catch (error) {
     logger.error("❌ Token verification failed", { error });
