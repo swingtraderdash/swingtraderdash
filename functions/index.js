@@ -83,3 +83,31 @@ exports.pageGatekeeper = onRequest(async (req, res) => {
     `);
   }
 });
+
+// 🍪 Session cookie setter for Firebase Hosting rewrites
+exports.sessionLogin = onRequest(async (req, res) => {
+  let rawBody = '';
+  req.on('data', chunk => {
+    rawBody += chunk;
+  });
+
+  req.on('end', async () => {
+    try {
+      const { idToken } = JSON.parse(rawBody);
+      const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
+
+      const sessionCookie = await admin.auth().createSessionCookie(idToken, { expiresIn });
+      const options = {
+        maxAge: expiresIn,
+        httpOnly: true,
+        secure: true
+      };
+
+      res.cookie('__session', sessionCookie, options);
+      res.status(200).send({ status: 'success' });
+    } catch (error) {
+      logger.error("❌ Failed to create session cookie", { error });
+      res.status(401).send('Unauthorized');
+    }
+  });
+});
