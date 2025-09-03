@@ -8,15 +8,23 @@
     ],
     "rewrites": [
       {
+        "source": "/blanktemplate",
+        "function": "pageGatekeeper"
+      },
+      {
         "source": "/blanktemplate.html",
         "function": "pageGatekeeper"
       },
       {
-        "source": "/trialpage.html",
+        "source": "/blanktemplate/**",
         "function": "pageGatekeeper"
       },
       {
         "source": "/trialpage",
+        "function": "pageGatekeeper"
+      },
+      {
+        "source": "/trialpage.html",
         "function": "pageGatekeeper"
       },
       {
