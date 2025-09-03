@@ -17,11 +17,16 @@ exports.pageGatekeeper = onRequest(async (req, res) => {
   let decodedToken;
 
   if (sessionCookie) {
+    logger.info("🔍 Raw session cookie received", { cookie: sessionCookie });
     try {
       decodedToken = await admin.auth().verifySessionCookie(sessionCookie, true);
       logger.info(`✅ Session cookie verified for UID: ${decodedToken.uid}`, { structuredData: true });
     } catch (error) {
-      logger.warn("❌ Invalid session cookie", { error });
+      logger.warn("❌ Invalid session cookie", {
+        error: error.message,
+        stack: error.stack,
+        cookie: sessionCookie || 'No cookie found'
+      });
     }
   }
 
@@ -47,7 +52,11 @@ exports.pageGatekeeper = onRequest(async (req, res) => {
       decodedToken = await admin.auth().verifyIdToken(idToken);
       logger.info(`✅ Token verified for UID: ${decodedToken.uid}`, { structuredData: true });
     } catch (error) {
-      logger.error("❌ Token verification failed", { error });
+      logger.error("❌ Token verification failed", {
+        error: error.message,
+        stack: error.stack,
+        token: idToken
+      });
       return res.status(403).send(`
         <!DOCTYPE html>
         <html>
@@ -106,7 +115,10 @@ exports.sessionLogin = onRequest(async (req, res) => {
       res.cookie('__session', sessionCookie, options);
       res.status(200).send({ status: 'success' });
     } catch (error) {
-      logger.error("❌ Failed to create session cookie", { error });
+      logger.error("❌ Failed to create session cookie", {
+        error: error.message,
+        stack: error.stack
+      });
       res.status(401).send('Unauthorized');
     }
   });
