@@ -13,11 +13,13 @@ const firebaseConfig = {
   appId: "1:27892139023:web:10f0679e33eb93b3744f7a"
 };
 
-
 export const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence)
   .then(() => console.log("[Firebase] 🧠 Session persistence set to local"))
   .catch((err) => console.error("[Firebase] ❌ Failed to set persistence:", err));
+
+// ✅ Expose auth globally for console debugging
+window.auth = auth;
 
