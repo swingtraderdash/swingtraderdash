@@ -12,7 +12,8 @@
 
   <!-- Firebase config and main login logic -->
   <script type="module" src="/js/firebaseConfig.js" defer></script>
-  <script type="module" src="/js/main.js" defer></script> <!-- ✅ Redirected to main.js -->
+  <script type="module" src="/js/main.js" defer></script>
+  <script type="module" src="/js/injectNav.js" defer></script> <!-- ✅ Nav injection script -->
 
   <style>
     /* 🔧 Logo Styling */
@@ -73,6 +74,9 @@
   <!-- AGENT-SAFE-ZONE: NAV -->
   <div id="nav"></div>
   <!-- END AGENT-SAFE-ZONE -->
+
+  <!-- 🔧 Added for Trial link fetch injection -->
+  <div id="mainContent"></div>
 
   <main>
     <div class="container">
