@@ -1,7 +1,22 @@
 // File: /public/js/injectNav.js
 
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { app } from "./firebaseConfig.js";
+
+const auth = getAuth(app);
+let userToken = null;
+
+// 🔄 Listen for auth state and cache token
+onAuthStateChanged(auth, user => {
+  if (user) {
+    user.getIdToken().then(token => {
+      userToken = token;
+      console.log("🔐 Token cached");
+    });
+  } else {
+    console.warn("🚫 No user signed in");
+  }
+});
 
 export function injectNav() {
   console.log("[injectNav] Fired");
@@ -44,28 +59,23 @@ export function injectNav() {
           trialLink.addEventListener("click", (e) => {
             e.preventDefault();
 
-            const auth = getAuth(app);
-            const user = auth.currentUser;
-
-            if (user) {
-              user.getIdToken().then(token => {
-                fetch("/trialpage", {
-                  method: "GET",
-                  headers: {
-                    Authorization: `Bearer ${token}`
-                  }
-                })
-                .then(response => response.text())
-                .then(html => {
-                  console.log("✅ Trial page loaded");
-                  mainContent.innerHTML = html;
-                })
-                .catch(error => {
-                  console.error("❌ Error loading trial page:", error);
-                });
+            if (userToken) {
+              fetch("/trialpage", {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${userToken}`
+                }
+              })
+              .then(response => response.text())
+              .then(html => {
+                console.log("✅ Trial page loaded");
+                mainContent.innerHTML = html;
+              })
+              .catch(error => {
+                console.error("❌ Error loading trial page:", error);
               });
             } else {
-              console.warn("🚫 User not authenticated");
+              console.warn("🚫 No token available — user may not be signed in");
             }
           });
 
