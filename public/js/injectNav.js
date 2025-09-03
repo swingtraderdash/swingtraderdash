@@ -62,17 +62,20 @@ export function injectNav() {
             if (userToken) {
               fetch("/trialpage", {
                 method: "GET",
-                headers: {
-                  Authorization: `Bearer ${userToken}`
-                }
+                credentials: "include"
               })
-              .then(response => response.text())
+              .then(response => {
+                if (!response.ok) {
+                  throw new Error(`403 Forbidden — session cookie may be missing`);
+                }
+                return response.text();
+              })
               .then(html => {
                 console.log("✅ Trial page loaded");
                 mainContent.innerHTML = html;
               })
               .catch(error => {
-                console.error("❌ Error loading trial page:", error);
+                console.error("❌ Error loading trial page:", error.message);
               });
             } else {
               console.warn("🚫 No token available — user may not be signed in");
