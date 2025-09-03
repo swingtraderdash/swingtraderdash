@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // 🍪 Send ID token to backend to set session cookie
       const idToken = await userCredential.user.getIdToken();
-      await fetch("/sessionLogin", {
+      const response = await fetch("/sessionLogin", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -33,8 +33,12 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ idToken })
       });
 
-      // 🔁 Redirect to protected page
-      window.location.assign("/trialpage");
+      if (response.ok) {
+        console.log("🍪 Session cookie set successfully");
+        // No redirect — stay on index page
+      } else {
+        console.warn("⚠️ Session cookie setup failed");
+      }
     } catch (error) {
       console.error("❌ Login failed:", error.message);
       alert("Login failed: " + error.message);
