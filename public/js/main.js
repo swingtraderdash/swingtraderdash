@@ -22,7 +22,19 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log("✅ Login successful:", userCredential.user.email);
-      document.cookie = "auth=true; path=/";
+
+      // 🍪 Send ID token to backend to set session cookie
+      const idToken = await userCredential.user.getIdToken();
+      await fetch("/sessionLogin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ idToken })
+      });
+
+      // 🔁 Redirect to protected page
+      window.location.assign("/trialpage");
     } catch (error) {
       console.error("❌ Login failed:", error.message);
       alert("Login failed: " + error.message);
