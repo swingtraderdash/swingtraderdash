@@ -22,8 +22,12 @@
       margin-top: 3rem;
     }
   </style>
-  <script>
+  <script type="module">
+    import { app } from "/js/firebaseConfig.js";
+    import { protectPage } from "/js/authGuard.js";
+
     console.log("🧪 Trial Page Loaded");
+    protectPage(app);
   </script>
 </head>
 <body>
