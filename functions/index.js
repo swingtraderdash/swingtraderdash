@@ -7,9 +7,7 @@ const { onRequest } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const fs = require("fs");
 const path = require("path");
-const admin = require("firebase-admin");
 
-admin.initializeApp();
 setGlobalOptions({ maxInstances: 10 });
 
 // 🔐 Unified gatekeeper for all token-protected pages
