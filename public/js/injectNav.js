@@ -51,32 +51,16 @@ export function injectNav() {
       // Secure Trial link handler
       const waitForTrialLink = setInterval(() => {
         const trialLink = document.getElementById("trialLink");
-        const mainContent = document.getElementById("mainContent"); // Adjust if needed
 
-        if (trialLink && mainContent) {
+        if (trialLink) {
           clearInterval(waitForTrialLink);
 
           trialLink.addEventListener("click", (e) => {
             e.preventDefault();
 
             if (userToken) {
-              fetch("/trialpage", {
-                method: "GET",
-                credentials: "include"
-              })
-              .then(response => {
-                if (!response.ok) {
-                  throw new Error(`403 Forbidden — session cookie may be missing`);
-                }
-                return response.text();
-              })
-              .then(html => {
-                console.log("✅ Trial page loaded");
-                mainContent.innerHTML = html;
-              })
-              .catch(error => {
-                console.error("❌ Error loading trial page:", error.message);
-              });
+              console.log("🔐 Navigating to Trial page via browser");
+              window.location.assign("/trialpage");
             } else {
               console.warn("🚫 No token available — user may not be signed in");
             }
@@ -84,7 +68,7 @@ export function injectNav() {
 
           console.log("[injectNav] 🔐 Trial link secured");
         } else {
-          console.warn("[injectNav] ⏳ Waiting for Trial link or #mainContent...");
+          console.warn("[injectNav] ⏳ Waiting for Trial link...");
         }
       }, 250);
     } else {
