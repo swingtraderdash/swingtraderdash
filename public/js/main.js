@@ -1,6 +1,6 @@
 // File: /public/js/main.js
 
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { app } from "./firebaseConfig.js";
 import { injectNav } from "./injectNav.js"; // ✅ Modular nav injection
 
@@ -11,39 +11,6 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("✅ Firebase initialized");
 
   const loginBox = document.querySelector(".login-box");
-  const loginBtn = document.getElementById("loginBtn");
-  const emailInput = document.getElementById("emailInput");
-  const passwordInput = document.getElementById("passwordInput");
-
-  loginBtn?.addEventListener("click", async () => {
-    const email = emailInput.value;
-    const password = passwordInput.value;
-
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      console.log("✅ Login successful:", userCredential.user.email);
-
-      // 🍪 Send ID token to backend to set session cookie
-      const idToken = await userCredential.user.getIdToken();
-      const response = await fetch("/sessionLogin", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ idToken })
-      });
-
-      if (response.ok) {
-        console.log("🍪 Session cookie set successfully");
-        // No redirect — stay on index page
-      } else {
-        console.warn("⚠️ Session cookie setup failed");
-      }
-    } catch (error) {
-      console.error("❌ Login failed:", error.message);
-      alert("Login failed: " + error.message);
-    }
-  });
 
   onAuthStateChanged(auth, (user) => {
     if (user) {
