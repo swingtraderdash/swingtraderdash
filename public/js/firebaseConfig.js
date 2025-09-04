@@ -2,7 +2,12 @@ console.log("[firebaseConfig.js] ✅ Loaded");
 
 // File: /public/js/firebaseConfig.js
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  getAuth,
+  setPersistence,
+  browserLocalPersistence,
+  connectAuthEmulator
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBIUbM6ZSPGDh9AxU2ySN4Ldtzpka5RpCg",
@@ -16,10 +21,13 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
+
+// Connect Auth to the local emulator
+connectAuthEmulator(auth, "http://127.0.0.1:9099");
+
 setPersistence(auth, browserLocalPersistence)
   .then(() => console.log("[Firebase] 🧠 Session persistence set to local"))
   .catch((err) => console.error("[Firebase] ❌ Failed to set persistence:", err));
 
 // ✅ Expose auth globally for console debugging
 window.auth = auth;
-
