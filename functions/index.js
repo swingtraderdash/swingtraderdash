@@ -1,6 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const cors = require('cors')({ origin: true }); // Enable CORS for all origins
+const cors = require('cors')({ origin: true });
 const { setGlobalOptions } = require("firebase-functions");
 const { onRequest } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
@@ -10,13 +10,11 @@ const path = require("path");
 admin.initializeApp();
 setGlobalOptions({ maxInstances: 10 });
 
-// 🔐 Unified gatekeeper for all token-protected pages
 exports.pageGatekeeper = onRequest((req, res) => {
-  cors(req, res, async () => { // Add CORS
+  cors(req, res, async () => {
     logger.info(`Incoming request path: ${req.path}`, { structuredData: true });
 
-    // 🔍 Check for session cookie first (used in Firebase Hosting rewrites)
-    const sessionCookie = req.cookies ? req.cookies.__session : null; // Avoid optional chaining
+    const sessionCookie = req.cookies ? req.cookies.__session : null;
     let decodedToken;
 
     if (sessionCookie) {
@@ -33,7 +31,6 @@ exports.pageGatekeeper = onRequest((req, res) => {
       }
     }
 
-    // 🔍 Fallback to Authorization header if no valid session cookie
     if (!decodedToken) {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -73,7 +70,6 @@ exports.pageGatekeeper = onRequest((req, res) => {
       }
     }
 
-    // ✅ Auth confirmed — serve the requested page
     const pageName = req.path.replace("/", "") + ".html";
     const htmlPath = path.join(__dirname, "templates", pageName);
 
@@ -97,9 +93,8 @@ exports.pageGatekeeper = onRequest((req, res) => {
   });
 });
 
-// 🍪 Session cookie setter for Firebase Hosting rewrites
 exports.sessionLogin = onRequest((req, res) => {
-  cors(req, res, async () => { // Add CORS
+  cors(req, res, async () => {
     let rawBody = '';
     req.on('data', chunk => {
       rawBody += chunk;
@@ -108,7 +103,7 @@ exports.sessionLogin = onRequest((req, res) => {
     req.on('end', async () => {
       try {
         const { idToken } = JSON.parse(rawBody);
-        const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
+        const expiresIn = 60 * 60 * 24 * 5 * 1000;
 
         const sessionCookie = await admin.auth().createSessionCookie(idToken, { expiresIn });
         const options = {

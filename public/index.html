@@ -10,10 +10,13 @@
   <link rel="preload" href="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js" as="script" crossorigin="anonymous" />
   <link rel="preload" href="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js" as="script" crossorigin="anonymous" />
 
-  <!-- Firebase config and main login logic -->
+  <!-- ✅ Firebase config MUST load first -->
   <script type="module" src="/js/firebaseConfig.js" defer></script>
+
+  <!-- App logic and UI scripts -->
   <script type="module" src="/js/main.js" defer></script>
-  <script type="module" src="/js/injectNav.js" defer></script> <!-- ✅ Nav injection script -->
+  <script type="module" src="/js/injectNav.js" defer></script>
+  <script type="module" src="/js/sessionLogin.js" defer></script>
 
   <style>
     /* 🔧 Logo Styling */
@@ -94,8 +97,5 @@
   <footer>
     &copy; 2025 SwingTrader. All rights reserved.
   </footer>
-
-  <!-- Session-cookie setter moved into external module -->
-  <script type="module" src="/js/sessionLogin.js" defer></script>
 </body>
 </html>
