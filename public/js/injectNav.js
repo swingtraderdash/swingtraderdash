@@ -32,7 +32,7 @@ export function injectNav() {
           <ul>
             <li><a href="/index.html">Home</a></li> 
             <li><a href="/watchlist.html">Watchlist</a></li>
-            <li><a href="/trialpage.html" id="trialLink">Trial</a></li>
+            <li><a href="/trialpage" id="trialLink">Trial</a></li>
             <li class="dropdown">
               <a href="#">Alerts</a>
               <ul class="dropdown-content">
@@ -60,7 +60,7 @@ export function injectNav() {
 
             if (userToken) {
               console.log("🔐 Navigating to Trial page via browser");
-              window.location.assign("/trialpage");
+              window.location.href = "/trialpage";
             } else {
               console.warn("🚫 No token available — user may not be signed in");
             }
