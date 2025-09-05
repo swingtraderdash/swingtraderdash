@@ -5,8 +5,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import {
   getAuth,
   setPersistence,
-  browserLocalPersistence,
-  connectAuthEmulator
+  browserLocalPersistence
+  // connectAuthEmulator // Removed for production
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
@@ -22,8 +22,8 @@ export const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
 
-// Connect Auth to the local emulator
-connectAuthEmulator(auth, "http://127.0.0.1:9099");
+// ❌ Removed emulator binding for production
+// connectAuthEmulator(auth, "http://127.0.0.1:9099");
 
 setPersistence(auth, browserLocalPersistence)
   .then(() => console.log("[Firebase] 🧠 Session persistence set to local"))
