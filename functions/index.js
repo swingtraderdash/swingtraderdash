@@ -97,86 +97,97 @@ exports.pageGatekeeper = onRequest((req, res) => {
 });
 
 exports.sessionLogin = onRequest((req, res) => {
+  logger.info("[sessionLogin] 🌟 Function invoked", { method: req.method, headers: req.headers });
   cors(req, res, async () => {
-    logger.info("[sessionLogin] 🚀 Request received", { method: req.method, headers: req.headers });
+    logger.info("[sessionLogin] 🚀 Request received after CORS", { method: req.method, headers: req.headers });
     if (req.method !== 'POST') {
       logger.warn("[sessionLogin] 🚫 Invalid method", { method: req.method });
       return res.status(405).send('Method Not Allowed');
     }
 
     let rawBody = '';
-    req.on('data', chunk => {
-      rawBody += chunk;
-    });
+    try {
+      logger.info("[sessionLogin] 📥 Starting to read request body");
+      req.on('data', chunk => {
+        rawBody += chunk;
+        logger.info("[sessionLogin] 📥 Received chunk", { chunkLength: chunk.length });
+      });
 
-    req.on('end', async () => {
-      try {
-        logger.info("[sessionLogin] 📥 Raw body received", { rawBody });
-        let parsedBody;
+      req.on('end', async () => {
         try {
-          parsedBody = JSON.parse(rawBody);
-          logger.info("[sessionLogin] ✅ JSON parsed", { parsedBody });
-        } catch (error) {
-          logger.error("[sessionLogin] ❌ JSON parse failed", {
-            error: error.message,
-            stack: error.stack,
-            rawBody
-          });
-          return res.status(400).send('Invalid JSON body');
-        }
+          logger.info("[sessionLogin] 📥 Raw body received", { rawBody });
+          let parsedBody;
+          try {
+            parsedBody = JSON.parse(rawBody);
+            logger.info("[sessionLogin] ✅ JSON parsed", { parsedBody });
+          } catch (error) {
+            logger.error("[sessionLogin] ❌ JSON parse failed", {
+              error: error.message,
+              stack: error.stack,
+              rawBody
+            });
+            return res.status(400).send('Invalid JSON body');
+          }
 
-        const { idToken } = parsedBody;
-        if (!idToken) {
-          logger.error("[sessionLogin] ❌ No idToken provided", { parsedBody });
-          return res.status(400).send('No idToken provided');
-        }
-        logger.info("[sessionLogin] 🔍 Parsed idToken", { idToken: idToken.substring(0, 20) + '...' });
+          const { idToken } = parsedBody;
+          if (!idToken) {
+            logger.error("[sessionLogin] ❌ No idToken provided", { parsedBody });
+            return res.status(400).send('No idToken provided');
+          }
+          logger.info("[sessionLogin] 🔍 Parsed idToken", { idToken: idToken.substring(0, 20) + '...' });
 
-        // Verify idToken
-        let decodedToken;
-        try {
-          decodedToken = await admin.auth().verifyIdToken(idToken);
-          logger.info("[sessionLogin] ✅ idToken verified", { uid: decodedToken.uid });
+          // Verify idToken
+          let decodedToken;
+          try {
+            decodedToken = await admin.auth().verifyIdToken(idToken);
+            logger.info("[sessionLogin] ✅ idToken verified", { uid: decodedToken.uid });
+          } catch (error) {
+            logger.error("[sessionLogin] ❌ idToken verification failed", {
+              error: error.message,
+              stack: error.stack
+            });
+            return res.status(401).send('Invalid idToken');
+          }
+
+          const expiresIn = 60 * 60 * 24 * 5 * 1000;
+          let sessionCookie;
+          try {
+            sessionCookie = await admin.auth().createSessionCookie(idToken, { expiresIn });
+            logger.info("[sessionLogin] ✅ Session cookie created", { sessionCookie: sessionCookie.substring(0, 20) + '...' });
+          } catch (error) {
+            logger.error("[sessionLogin] ❌ Session cookie creation failed", {
+              error: error.message,
+              stack: error.stack
+            });
+            return res.status(401).send('Failed to create session cookie');
+          }
+
+          res.set('Access-Control-Allow-Credentials', 'true');
+          const options = {
+            maxAge: expiresIn,
+            httpOnly: true,
+            secure: true,
+            sameSite: 'Strict'
+          };
+          res.cookie('__session', sessionCookie, options);
+          logger.info("[sessionLogin] 🍪 Cookie set", { cookieOptions: options });
+
+          res.status(200).send({ status: 'success' });
+          logger.info("[sessionLogin] ✅ Response sent", { status: 200 });
         } catch (error) {
-          logger.error("[sessionLogin] ❌ idToken verification failed", {
+          logger.error("[sessionLogin] ❌ General error in request end", {
             error: error.message,
             stack: error.stack
           });
-          return res.status(401).send('Invalid idToken');
+          res.status(500).send('Server error');
         }
-
-        const expiresIn = 60 * 60 * 24 * 5 * 1000;
-        let sessionCookie;
-        try {
-          sessionCookie = await admin.auth().createSessionCookie(idToken, { expiresIn });
-          logger.info("[sessionLogin] ✅ Session cookie created", { sessionCookie: sessionCookie.substring(0, 20) + '...' });
-        } catch (error) {
-          logger.error("[sessionLogin] ❌ Session cookie creation failed", {
-            error: error.message,
-            stack: error.stack
-          });
-          return res.status(401).send('Failed to create session cookie');
-        }
-
-        res.set('Access-Control-Allow-Credentials', 'true');
-        const options = {
-          maxAge: expiresIn,
-          httpOnly: true,
-          secure: true,
-          sameSite: 'Strict'
-        };
-        res.cookie('__session', sessionCookie, options);
-        logger.info("[sessionLogin] 🍪 Cookie set", { cookieOptions: options });
-
-        res.status(200).send({ status: 'success' });
-        logger.info("[sessionLogin] ✅ Response sent", { status: 200 });
-      } catch (error) {
-        logger.error("[sessionLogin] ❌ General error", {
-          error: error.message,
-          stack: error.stack
-        });
-        res.status(500).send('Server error');
-      }
-    });
+      });
+    } catch (error) {
+      logger.error("[sessionLogin] ❌ Error reading request body", {
+        error: error.message,
+        stack: error.stack
+      });
+      res.status(500).send('Error reading request body');
+    }
   });
 });
