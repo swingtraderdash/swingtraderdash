@@ -14,18 +14,20 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 
     const idToken = await user.getIdToken(true);
 
-    const response = await fetch("/sessionLogin", {
+    const response = await fetch("https://us-central1-swingtraderdash-1a958.cloudfunctions.net/sessionLogin", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
       },
-      body: JSON.stringify({ idToken })
+      body: JSON.stringify({ idToken }),
+      credentials: "include"
     });
 
     if (response.ok) {
       console.log("✅ Session cookie set");
     } else {
-      console.error("❌ Failed to set session cookie");
+      console.error("❌ Failed to set session cookie:", response.status, response.statusText);
     }
   } catch (error) {
     console.error("🚫 Login failed:", error.message);
