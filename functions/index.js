@@ -112,12 +112,51 @@ exports.sessionLogin = onRequest((req, res) => {
     req.on('end', async () => {
       try {
         logger.info("[sessionLogin] 📥 Raw body received", { rawBody });
-        const { idToken } = JSON.parse(rawBody);
+        let parsedBody;
+        try {
+          parsedBody = JSON.parse(rawBody);
+          logger.info("[sessionLogin] ✅ JSON parsed", { parsedBody });
+        } catch (error) {
+          logger.error("[sessionLogin] ❌ JSON parse failed", {
+            error: error.message,
+            stack: error.stack,
+            rawBody
+          });
+          return res.status(400).send('Invalid JSON body');
+        }
+
+        const { idToken } = parsedBody;
+        if (!idToken) {
+          logger.error("[sessionLogin] ❌ No idToken provided", { parsedBody });
+          return res.status(400).send('No idToken provided');
+        }
         logger.info("[sessionLogin] 🔍 Parsed idToken", { idToken: idToken.substring(0, 20) + '...' });
 
+        // Verify idToken
+        let decodedToken;
+        try {
+          decodedToken = await admin.auth().verifyIdToken(idToken);
+          logger.info("[sessionLogin] ✅ idToken verified", { uid: decodedToken.uid });
+        } catch (error) {
+          logger.error("[sessionLogin] ❌ idToken verification failed", {
+            error: error.message,
+            stack: error.stack
+          });
+          return res.status(401).send('Invalid idToken');
+        }
+
         const expiresIn = 60 * 60 * 24 * 5 * 1000;
-        const sessionCookie = await admin.auth().createSessionCookie(idToken, { expiresIn });
-        logger.info("[sessionLogin] ✅ Session cookie created", { sessionCookie: sessionCookie.substring(0, 20) + '...' });
+        let sessionCookie;
+        try {
+          sessionCookie = await admin.auth().createSessionCookie(idToken, { expiresIn });
+          logger.info("[sessionLogin] ✅ Session cookie created", { sessionCookie: sessionCookie.substring(0, 20) + '...' });
+        } catch (error) {
+          logger.error("[sessionLogin] ❌ Session cookie creation failed", {
+            error: error.message,
+            stack: error.stack
+          });
+          return res.status(401).send('Failed to create session cookie');
+        }
 
         res.set('Access-Control-Allow-Credentials', 'true');
         const options = {
@@ -132,11 +171,11 @@ exports.sessionLogin = onRequest((req, res) => {
         res.status(200).send({ status: 'success' });
         logger.info("[sessionLogin] ✅ Response sent", { status: 200 });
       } catch (error) {
-        logger.error("[sessionLogin] ❌ Error", {
+        logger.error("[sessionLogin] ❌ General error", {
           error: error.message,
           stack: error.stack
         });
-        res.status(401).send('Unauthorized');
+        res.status(500).send('Server error');
       }
     });
   });
