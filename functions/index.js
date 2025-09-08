@@ -1,6 +1,9 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
-const cors = require('cors')({ origin: true });
+const cors = require('cors')({
+  origin: 'https://swingtraderdash-1a958.web.app',
+  credentials: true
+});
 const { setGlobalOptions } = require("firebase-functions");
 const { onRequest } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
@@ -95,6 +98,12 @@ exports.pageGatekeeper = onRequest((req, res) => {
 
 exports.sessionLogin = onRequest((req, res) => {
   cors(req, res, async () => {
+    logger.info("[sessionLogin] 🚀 Request received", { method: req.method, headers: req.headers });
+    if (req.method !== 'POST') {
+      logger.warn("[sessionLogin] 🚫 Invalid method", { method: req.method });
+      return res.status(405).send('Method Not Allowed');
+    }
+
     let rawBody = '';
     req.on('data', chunk => {
       rawBody += chunk;
@@ -102,20 +111,28 @@ exports.sessionLogin = onRequest((req, res) => {
 
     req.on('end', async () => {
       try {
+        logger.info("[sessionLogin] 📥 Raw body received", { rawBody });
         const { idToken } = JSON.parse(rawBody);
-        const expiresIn = 60 * 60 * 24 * 5 * 1000;
+        logger.info("[sessionLogin] 🔍 Parsed idToken", { idToken: idToken.substring(0, 20) + '...' });
 
+        const expiresIn = 60 * 60 * 24 * 5 * 1000;
         const sessionCookie = await admin.auth().createSessionCookie(idToken, { expiresIn });
+        logger.info("[sessionLogin] ✅ Session cookie created", { sessionCookie: sessionCookie.substring(0, 20) + '...' });
+
+        res.set('Access-Control-Allow-Credentials', 'true');
         const options = {
           maxAge: expiresIn,
           httpOnly: true,
-          secure: true
+          secure: true,
+          sameSite: 'Strict'
         };
-
         res.cookie('__session', sessionCookie, options);
+        logger.info("[sessionLogin] 🍪 Cookie set", { cookieOptions: options });
+
         res.status(200).send({ status: 'success' });
+        logger.info("[sessionLogin] ✅ Response sent", { status: 200 });
       } catch (error) {
-        logger.error("❌ Failed to create session cookie", {
+        logger.error("[sessionLogin] ❌ Error", {
           error: error.message,
           stack: error.stack
         });
