@@ -191,9 +191,3 @@ exports.testFunction = onRequest({ timeoutSeconds: 60, memory: '512MiB' }, (req,
   logger.info("[testFunction] ✅ Response sent", { status: 200 });
 });
      
-
-     
-     
-    
- 
-     
