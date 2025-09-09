@@ -139,6 +139,11 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
 
         const bodyPromise = new Promise((resolve, reject) => {
           req.on('data', chunk => {
+            if (rawBody.length > 1e6) {
+              logger.warn("[sessionLogin] 📥 Request body too large");
+              reject(new Error('Request body too large'));
+              return;
+            }
             rawBody += chunk;
             logger.info("[sessionLogin] 📥 Received chunk", { chunkLength: chunk.length, chunk: chunk.toString() });
           });
@@ -171,9 +176,6 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
         }
         logger.info("[sessionLogin] 🔍 Parsed idToken", { idToken: idToken.substring(0, 20) + '...' });
 
-        // Temporarily bypass verifyIdToken to isolate timeout issue
-        logger.info("[sessionLogin] ⏭️ Bypassing idToken verification for debugging");
-
         const expiresIn = 60 * 60 * 24 * 5 * 1000;
         let sessionCookie;
         try {
@@ -186,10 +188,11 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
         } catch (error) {
           logger.error("[sessionLogin] ❌ Session cookie creation failed", {
             error: error.message,
-            stack: error.stack
+            stack: error.stack,
+            code: error.code || 'N/A'
           });
           res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
-          return res.status(401).send('Failed to create session cookie');
+          return res.status(401).send(`Failed to create session cookie: ${error.message}`);
         }
 
         res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
@@ -208,18 +211,20 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
       } catch (error) {
         logger.error("[sessionLogin] ❌ Error processing request", {
           error: error.message,
-          stack: error.stack
+          stack: error.stack,
+          code: error.code || 'N/A'
         });
         res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
-        res.status(500).send('Error processing request');
+        res.status(500).send(`Error processing request: ${error.message}`);
       }
     });
   } catch (error) {
     logger.error("[sessionLogin] ❌ Error before CORS middleware", {
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
+      code: error.code || 'N/A'
     });
     res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
-    res.status(500).send('Server error before CORS');
+    res.status(500).send(`Server error before CORS: ${error.message}`);
   }
 });
