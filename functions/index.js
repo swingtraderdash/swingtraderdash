@@ -176,7 +176,21 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120, memory: '512MiB' }, (req
   }
 });
 
-   
-
-   
+exports.testFunction = onRequest({ timeoutSeconds: 60, memory: '512MiB' }, (req, res) => {
+  logger.info("[testFunction] 🌟 Function invoked", {
+    method: req.method,
+    headers: req.headers,
+    memory: {
+      total: os.totalmem(),
+      free: os.freemem(),
+      used: os.totalmem() - os.freemem()
+    }
+  });
+  res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
+  res.status(200).send({ status: 'success' });
+  logger.info("[testFunction] ✅ Response sent", { status: 200 });
+});
+     
+    
+ 
      
