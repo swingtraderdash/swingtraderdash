@@ -9,6 +9,7 @@ const { onRequest } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 
 logger.info("[startup] Initializing Firebase Admin SDK");
 try {
@@ -110,8 +111,16 @@ exports.pageGatekeeper = onRequest((req, res) => {
   });
 });
 
-exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
-  logger.info("[sessionLogin] 🌟 Function invoked", { method: req.method, headers: req.headers });
+exports.sessionLogin = onRequest({ timeoutSeconds: 120, memory: '512MiB' }, (req, res) => {
+  logger.info("[sessionLogin] 🌟 Function invoked", {
+    method: req.method,
+    headers: req.headers,
+    memory: {
+      total: os.totalmem(),
+      free: os.freemem(),
+      used: os.totalmem() - os.freemem()
+    }
+  });
   if (req.method === 'OPTIONS') {
     logger.info("[sessionLogin] 📩 Handling OPTIONS preflight");
     res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
@@ -123,7 +132,15 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
 
   try {
     cors(req, res, async () => {
-      logger.info("[sessionLogin] 🚀 Request received after CORS", { method: req.method, headers: req.headers });
+      logger.info("[sessionLogin] 🚀 Request received after CORS", {
+        method: req.method,
+        headers: req.headers,
+        memory: {
+          total: os.totalmem(),
+          free: os.freemem(),
+          used: os.totalmem() - os.freemem()
+        }
+      });
       if (req.method !== 'POST') {
         logger.warn("[sessionLogin] 🚫 Invalid method", { method: req.method });
         res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
@@ -158,3 +175,8 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
     res.status(500).send(`Server error before CORS: ${error.message}`);
   }
 });
+
+   
+
+   
+     
