@@ -1,4 +1,3 @@
-// /js/sessionLogin.js
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { app } from "/js/firebaseConfig.js";
 
@@ -13,6 +12,10 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     const user = userCredential.user;
 
     const idToken = await user.getIdToken(true);
+    console.log("[sessionLogin] 🔍 Sending idToken:", idToken.substring(0, 20) + '...');
+
+    const requestBody = JSON.stringify({ idToken });
+    console.log("[sessionLogin] 📤 Request body:", requestBody);
 
     const response = await fetch("https://us-central1-swingtraderdash-1a958.cloudfunctions.net/sessionLogin", {
       method: "POST",
@@ -20,7 +23,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${idToken}`
       },
-      body: JSON.stringify({ idToken }),
+      body: requestBody,
       credentials: "include"
     });
 
