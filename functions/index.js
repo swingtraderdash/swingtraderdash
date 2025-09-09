@@ -96,7 +96,7 @@ exports.pageGatekeeper = onRequest((req, res) => {
   });
 });
 
-exports.sessionLogin = onRequest((req, res) => {
+exports.sessionLogin = onRequest({ timeoutSeconds: 30 }, (req, res) => {
   logger.info("[sessionLogin] 🌟 Function invoked", { method: req.method, headers: req.headers });
   cors(req, res, async () => {
     logger.info("[sessionLogin] 🚀 Request received after CORS", { method: req.method, headers: req.headers });
@@ -108,86 +108,92 @@ exports.sessionLogin = onRequest((req, res) => {
     let rawBody = '';
     try {
       logger.info("[sessionLogin] 📥 Starting to read request body");
-      req.on('data', chunk => {
-        rawBody += chunk;
-        logger.info("[sessionLogin] 📥 Received chunk", { chunkLength: chunk.length });
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request body read timeout')), 15000);
       });
 
-      req.on('end', async () => {
-        try {
-          logger.info("[sessionLogin] 📥 Raw body received", { rawBody });
-          let parsedBody;
-          try {
-            parsedBody = JSON.parse(rawBody);
-            logger.info("[sessionLogin] ✅ JSON parsed", { parsedBody });
-          } catch (error) {
-            logger.error("[sessionLogin] ❌ JSON parse failed", {
-              error: error.message,
-              stack: error.stack,
-              rawBody
-            });
-            return res.status(400).send('Invalid JSON body');
-          }
-
-          const { idToken } = parsedBody;
-          if (!idToken) {
-            logger.error("[sessionLogin] ❌ No idToken provided", { parsedBody });
-            return res.status(400).send('No idToken provided');
-          }
-          logger.info("[sessionLogin] 🔍 Parsed idToken", { idToken: idToken.substring(0, 20) + '...' });
-
-          // Verify idToken
-          let decodedToken;
-          try {
-            decodedToken = await admin.auth().verifyIdToken(idToken);
-            logger.info("[sessionLogin] ✅ idToken verified", { uid: decodedToken.uid });
-          } catch (error) {
-            logger.error("[sessionLogin] ❌ idToken verification failed", {
-              error: error.message,
-              stack: error.stack
-            });
-            return res.status(401).send('Invalid idToken');
-          }
-
-          const expiresIn = 60 * 60 * 24 * 5 * 1000;
-          let sessionCookie;
-          try {
-            sessionCookie = await admin.auth().createSessionCookie(idToken, { expiresIn });
-            logger.info("[sessionLogin] ✅ Session cookie created", { sessionCookie: sessionCookie.substring(0, 20) + '...' });
-          } catch (error) {
-            logger.error("[sessionLogin] ❌ Session cookie creation failed", {
-              error: error.message,
-              stack: error.stack
-            });
-            return res.status(401).send('Failed to create session cookie');
-          }
-
-          res.set('Access-Control-Allow-Credentials', 'true');
-          const options = {
-            maxAge: expiresIn,
-            httpOnly: true,
-            secure: true,
-            sameSite: 'Strict'
-          };
-          res.cookie('__session', sessionCookie, options);
-          logger.info("[sessionLogin] 🍪 Cookie set", { cookieOptions: options });
-
-          res.status(200).send({ status: 'success' });
-          logger.info("[sessionLogin] ✅ Response sent", { status: 200 });
-        } catch (error) {
-          logger.error("[sessionLogin] ❌ General error in request end", {
-            error: error.message,
-            stack: error.stack
-          });
-          res.status(500).send('Server error');
-        }
+      const bodyPromise = new Promise((resolve, reject) => {
+        req.on('data', chunk => {
+          rawBody += chunk;
+          logger.info("[sessionLogin] 📥 Received chunk", { chunkLength: chunk.length });
+        });
+        req.on('end', () => resolve());
+        req.on('error', err => reject(err));
       });
+
+      await Promise.race([bodyPromise, timeoutPromise]);
+
+      logger.info("[sessionLogin] 📥 Raw body received", { rawBody });
+      let parsedBody;
+      try {
+        parsedBody = JSON.parse(rawBody || '{}');
+        logger.info("[sessionLogin] ✅ JSON parsed", { parsedBody });
+      } catch (error) {
+        logger.error("[sessionLogin] ❌ JSON parse failed", {
+          error: error.message,
+          stack: error.stack,
+          rawBody
+        });
+        return res.status(400).send('Invalid JSON body');
+      }
+
+      const { idToken } = parsedBody;
+      if (!idToken) {
+        logger.error("[sessionLogin] ❌ No idToken provided", { parsedBody });
+        return res.status(400).send('No idToken provided');
+      }
+      logger.info("[sessionLogin] 🔍 Parsed idToken", { idToken: idToken.substring(0, 20) + '...' });
+
+      // Verify idToken
+      let decodedToken;
+      try {
+        decodedToken = await Promise.race([
+          admin.auth().verifyIdToken(idToken),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('idToken verification timeout')), 10000))
+        ]);
+        logger.info("[sessionLogin] ✅ idToken verified", { uid: decodedToken.uid });
+      } catch (error) {
+        logger.error("[sessionLogin] ❌ idToken verification failed", {
+          error: error.message,
+          stack: error.stack
+        });
+        return res.status(401).send('Invalid idToken');
+      }
+
+      const expiresIn = 60 * 60 * 24 * 5 * 1000;
+      let sessionCookie;
+      try {
+        sessionCookie = await Promise.race([
+          admin.auth().createSessionCookie(idToken, { expiresIn }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Session cookie creation timeout')), 10000))
+        ]);
+        logger.info("[sessionLogin] ✅ Session cookie created", { sessionCookie: sessionCookie.substring(0, 20) + '...' });
+      } catch (error) {
+        logger.error("[sessionLogin] ❌ Session cookie creation failed", {
+          error: error.message,
+          stack: error.stack
+        });
+        return res.status(401).send('Failed to create session cookie');
+      }
+
+      res.set('Access-Control-Allow-Credentials', 'true');
+      const options = {
+        maxAge: expiresIn,
+        httpOnly: true,
+        secure: true,
+        sameSite: 'Strict'
+      };
+      res.cookie('__session', sessionCookie, options);
+      logger.info("[sessionLogin] 🍪 Cookie set", { cookieOptions: options });
+
+      res.status(200).send({ status: 'success' });
+      logger.info("[sessionLogin] ✅ Response sent", { status: 200 });
     } catch (error) {
-      logger.error("[sessionLogin] ❌ Error reading request body", {
+      logger.error("[sessionLogin] ❌ Error processing request", {
         error: error.message,
         stack: error.stack
       });
-      res.status(500).send('Error reading request body');
+      res.status(500).send('Error processing request');
     }
   });
 });
