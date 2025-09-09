@@ -96,7 +96,7 @@ exports.pageGatekeeper = onRequest((req, res) => {
   });
 });
 
-exports.sessionLogin = onRequest({ timeoutSeconds: 30 }, (req, res) => {
+exports.sessionLogin = onRequest({ timeoutSeconds: 60 }, (req, res) => {
   logger.info("[sessionLogin] 🌟 Function invoked", { method: req.method, headers: req.headers });
   cors(req, res, async () => {
     logger.info("[sessionLogin] 🚀 Request received after CORS", { method: req.method, headers: req.headers });
@@ -109,13 +109,13 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 30 }, (req, res) => {
     try {
       logger.info("[sessionLogin] 📥 Starting to read request body");
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request body read timeout')), 15000);
+        setTimeout(() => reject(new Error('Request body read timeout')), 20000);
       });
 
       const bodyPromise = new Promise((resolve, reject) => {
         req.on('data', chunk => {
           rawBody += chunk;
-          logger.info("[sessionLogin] 📥 Received chunk", { chunkLength: chunk.length });
+          logger.info("[sessionLogin] 📥 Received chunk", { chunkLength: chunk.length, chunk: chunk.toString() });
         });
         req.on('end', () => resolve());
         req.on('error', err => reject(err));
@@ -149,7 +149,7 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 30 }, (req, res) => {
       try {
         decodedToken = await Promise.race([
           admin.auth().verifyIdToken(idToken),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('idToken verification timeout')), 10000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('idToken verification timeout')), 15000))
         ]);
         logger.info("[sessionLogin] ✅ idToken verified", { uid: decodedToken.uid });
       } catch (error) {
@@ -165,7 +165,7 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 30 }, (req, res) => {
       try {
         sessionCookie = await Promise.race([
           admin.auth().createSessionCookie(idToken, { expiresIn }),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Session cookie creation timeout')), 10000))
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Session cookie creation timeout')), 15000))
         ]);
         logger.info("[sessionLogin] ✅ Session cookie created", { sessionCookie: sessionCookie.substring(0, 20) + '...' });
       } catch (error) {
