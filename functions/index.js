@@ -177,23 +177,9 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
         logger.info("[sessionLogin] 🔍 Parsed idToken", { idToken: idToken.substring(0, 20) + '...' });
 
         const expiresIn = 60 * 60 * 24 * 5 * 1000;
-        let sessionCookie;
-        try {
-          logger.info("[sessionLogin] 🔄 Attempting to create session cookie");
-          sessionCookie = await Promise.race([
-            admin.auth().createSessionCookie(idToken, { expiresIn }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Session cookie creation timeout')), 30000))
-          ]);
-          logger.info("[sessionLogin] ✅ Session cookie created", { sessionCookie: sessionCookie.substring(0, 20) + '...' });
-        } catch (error) {
-          logger.error("[sessionLogin] ❌ Session cookie creation failed", {
-            error: error.message,
-            stack: error.stack,
-            code: error.code || 'N/A'
-          });
-          res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
-          return res.status(401).send(`Failed to create session cookie: ${error.message}`);
-        }
+        // Temporarily bypass createSessionCookie for testing
+        logger.info("[sessionLogin] ⏭️ Bypassing createSessionCookie for debugging");
+        const sessionCookie = 'dummy-session-cookie-for-testing';
 
         res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
         res.set('Access-Control-Allow-Credentials', 'true');
@@ -228,3 +214,7 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
     res.status(500).send(`Server error before CORS: ${error.message}`);
   }
 });
+       
+
+
+     
