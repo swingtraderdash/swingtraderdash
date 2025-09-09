@@ -48,6 +48,7 @@ exports.pageGatekeeper = onRequest((req, res) => {
       const authHeader = req.headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
         logger.warn("🚫 Missing or invalid Authorization header", { structuredData: true });
+        res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
         return res.status(403).send(`
           <!DOCTYPE html>
           <html>
@@ -70,6 +71,7 @@ exports.pageGatekeeper = onRequest((req, res) => {
           stack: error.stack,
           token: idToken
         });
+        res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
         return res.status(403).send(`
           <!DOCTYPE html>
           <html>
@@ -89,9 +91,11 @@ exports.pageGatekeeper = onRequest((req, res) => {
     if (fs.existsSync(htmlPath)) {
       const html = fs.readFileSync(htmlPath, "utf8");
       logger.info(`✅ Access granted to ${pageName}`, { structuredData: true });
+      res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
       return res.status(200).send(html);
     } else {
       logger.warn(`🚫 Requested page not found: ${pageName}`, { structuredData: true });
+      res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
       return res.status(404).send(`
         <!DOCTYPE html>
         <html>
@@ -108,11 +112,21 @@ exports.pageGatekeeper = onRequest((req, res) => {
 
 exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
   logger.info("[sessionLogin] 🌟 Function invoked", { method: req.method, headers: req.headers });
+  if (req.method === 'OPTIONS') {
+    logger.info("[sessionLogin] 📩 Handling OPTIONS preflight");
+    res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
+    res.set('Access-Control-Allow-Methods', 'POST');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.set('Access-Control-Allow-Credentials', 'true');
+    return res.status(204).send('');
+  }
+
   try {
     cors(req, res, async () => {
       logger.info("[sessionLogin] 🚀 Request received after CORS", { method: req.method, headers: req.headers });
       if (req.method !== 'POST') {
         logger.warn("[sessionLogin] 🚫 Invalid method", { method: req.method });
+        res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
         return res.status(405).send('Method Not Allowed');
       }
 
@@ -145,12 +159,14 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
             stack: error.stack,
             rawBody
           });
+          res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
           return res.status(400).send('Invalid JSON body');
         }
 
         const { idToken } = parsedBody;
         if (!idToken) {
           logger.error("[sessionLogin] ❌ No idToken provided", { parsedBody });
+          res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
           return res.status(400).send('No idToken provided');
         }
         logger.info("[sessionLogin] 🔍 Parsed idToken", { idToken: idToken.substring(0, 20) + '...' });
@@ -172,9 +188,11 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
             error: error.message,
             stack: error.stack
           });
+          res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
           return res.status(401).send('Failed to create session cookie');
         }
 
+        res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
         res.set('Access-Control-Allow-Credentials', 'true');
         const options = {
           maxAge: expiresIn,
@@ -192,6 +210,7 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
           error: error.message,
           stack: error.stack
         });
+        res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
         res.status(500).send('Error processing request');
       }
     });
@@ -200,6 +219,7 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
       error: error.message,
       stack: error.stack
     });
+    res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
     res.status(500).send('Server error before CORS');
   }
 });
