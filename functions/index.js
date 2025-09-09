@@ -130,79 +130,23 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
         return res.status(405).send('Method Not Allowed');
       }
 
-      let rawBody = '';
-      try {
-        logger.info("[sessionLogin] 📥 Starting to read request body");
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Request body read timeout')), 30000);
-        });
+      logger.info("[sessionLogin] ⏭️ Bypassing body parsing and session cookie creation for debugging");
+      const expiresIn = 60 * 60 * 24 * 5 * 1000;
+      const sessionCookie = 'dummy-session-cookie-for-testing';
 
-        const bodyPromise = new Promise((resolve, reject) => {
-          req.on('data', chunk => {
-            if (rawBody.length > 1e6) {
-              logger.warn("[sessionLogin] 📥 Request body too large");
-              reject(new Error('Request body too large'));
-              return;
-            }
-            rawBody += chunk;
-            logger.info("[sessionLogin] 📥 Received chunk", { chunkLength: chunk.length, chunk: chunk.toString() });
-          });
-          req.on('end', () => resolve());
-          req.on('error', err => reject(err));
-        });
+      res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
+      res.set('Access-Control-Allow-Credentials', 'true');
+      const options = {
+        maxAge: expiresIn,
+        httpOnly: true,
+        secure: true,
+        sameSite: 'Strict'
+      };
+      res.cookie('__session', sessionCookie, options);
+      logger.info("[sessionLogin] 🍪 Cookie set", { cookieOptions: options });
 
-        await Promise.race([bodyPromise, timeoutPromise]);
-
-        logger.info("[sessionLogin] 📥 Raw body received", { rawBody });
-        let parsedBody;
-        try {
-          parsedBody = JSON.parse(rawBody || '{}');
-          logger.info("[sessionLogin] ✅ JSON parsed", { parsedBody });
-        } catch (error) {
-          logger.error("[sessionLogin] ❌ JSON parse failed", {
-            error: error.message,
-            stack: error.stack,
-            rawBody
-          });
-          res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
-          return res.status(400).send('Invalid JSON body');
-        }
-
-        const { idToken } = parsedBody;
-        if (!idToken) {
-          logger.error("[sessionLogin] ❌ No idToken provided", { parsedBody });
-          res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
-          return res.status(400).send('No idToken provided');
-        }
-        logger.info("[sessionLogin] 🔍 Parsed idToken", { idToken: idToken.substring(0, 20) + '...' });
-
-        const expiresIn = 60 * 60 * 24 * 5 * 1000;
-        // Temporarily bypass createSessionCookie for testing
-        logger.info("[sessionLogin] ⏭️ Bypassing createSessionCookie for debugging");
-        const sessionCookie = 'dummy-session-cookie-for-testing';
-
-        res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
-        res.set('Access-Control-Allow-Credentials', 'true');
-        const options = {
-          maxAge: expiresIn,
-          httpOnly: true,
-          secure: true,
-          sameSite: 'Strict'
-        };
-        res.cookie('__session', sessionCookie, options);
-        logger.info("[sessionLogin] 🍪 Cookie set", { cookieOptions: options });
-
-        res.status(200).send({ status: 'success' });
-        logger.info("[sessionLogin] ✅ Response sent", { status: 200 });
-      } catch (error) {
-        logger.error("[sessionLogin] ❌ Error processing request", {
-          error: error.message,
-          stack: error.stack,
-          code: error.code || 'N/A'
-        });
-        res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
-        res.status(500).send(`Error processing request: ${error.message}`);
-      }
+      res.status(200).send({ status: 'success' });
+      logger.info("[sessionLogin] ✅ Response sent", { status: 200 });
     });
   } catch (error) {
     logger.error("[sessionLogin] ❌ Error before CORS middleware", {
@@ -214,7 +158,3 @@ exports.sessionLogin = onRequest({ timeoutSeconds: 120 }, (req, res) => {
     res.status(500).send(`Server error before CORS: ${error.message}`);
   }
 });
-       
-
-
-     
