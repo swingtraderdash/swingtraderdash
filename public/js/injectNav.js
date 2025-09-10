@@ -1,62 +1,46 @@
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { app } from "./firebaseConfig.js";
+import { app } from "/js/firebaseConfig.js";
 
 const auth = getAuth(app);
-let userToken = null;
 
-onAuthStateChanged(auth, user => {
+console.log('[injectNav] Script loaded');
+
+onAuthStateChanged(auth, (user) => {
   if (user) {
-    user.getIdToken().then(token => {
-      userToken = token;
-      console.log("🔐 Token cached");
-    });
+    console.log('[injectNav] ✅ User signed in:', user.email);
   } else {
-    console.warn("🚫 No user signed in");
+    console.log('[injectNav] 🚫 No user signed in');
+  }
+
+  const navDiv = document.getElementById('nav');
+  if (!navDiv) {
+    console.error('[injectNav] 🚫 Nav div not found');
+    return;
+  }
+
+  const navContent = `
+    <nav>
+      <ul>
+        <li><a href="/">Home</a></li>
+        ${user ? '<li><a href="#" id="logoutBtn">Logout</a></li>' : ''}
+      </ul>
+    </nav>
+  `;
+  navDiv.innerHTML = navContent;
+  console.log('[injectNav] ✅ Nav injected');
+
+  if (user) {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async () => {
+        try {
+          await auth.signOut();
+          console.log('[injectNav] ✅ User signed out');
+          window.location.href = '/';
+        } catch (error) {
+          console.error('[injectNav] 🚫 Logout failed:', error.message);
+        }
+      });
+    }
   }
 });
-
-export function injectNav() {
-  console.log("[injectNav] Fired");
-
-  const waitForNav = setInterval(() => {
-    const navContainer = document.getElementById("nav");
-
-    if (navContainer) {
-      clearInterval(waitForNav);
-
-      navContainer.innerHTML = `
-        <nav>
-          <ul>
-            <li><a href="/index.html">Home</a></li> 
-            <li><a href="/watchlist.html">Watchlist</a></li>
-            <li><a href="/trialpage.html" id="trialLink">Trial</a></li>
-            <li class="dropdown">
-              <a href="#">Alerts</a>
-              <ul class="dropdown-content">
-                <li><a href="/set-new.html">Set New</a></li>
-                <li><a href="/manage.html">Manage</a></li>
-                <li><a href="/triggeredalerts.html">Triggered</a></li>
-              </ul>
-            </li>              
-            <li><a href="/blanktemplate.html">Blank</a></li>
-            <li><a href="/logout.html">Logout</a></li>
-          </ul>
-        </nav>
-      `;
-      console.log("[injectNav] ✅ Nav injected");
-
-      const waitForTrialLink = setInterval(() => {
-        const trialLink = document.getElementById("trialLink");
-
-        if (trialLink) {
-          clearInterval(waitForTrialLink);
-          console.log("[injectNav] 🔐 Trial link secured");
-        } else {
-          console.warn("[injectNav] ⏳ Waiting for Trial link...");
-        }
-      }, 250);
-    } else {
-      console.warn("[injectNav] ⏳ Waiting for #nav to appear...");
-    }
-  }, 250);
-}
