@@ -15,6 +15,7 @@
   "main": "index.js",
   "dependencies": {
     "cookie": "^1.0.2",
+    "cors": "^2.8.5",
     "firebase-admin": "^12.7.0",
     "firebase-functions": "^6.4.0"
   },
