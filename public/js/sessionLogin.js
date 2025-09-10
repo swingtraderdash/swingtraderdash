@@ -45,9 +45,10 @@ loginBtn.addEventListener("click", async () => {
     console.log('[sessionLogin] Response:', response.status, responseBody);
 
     if (response.ok) {
-      console.log('[sessionLogin] ✅ Session cookie set');
+      console.log('[sessionLogin] ✅ Authentication verified');
+      window.location.href = '/trialpage';
     } else {
-      console.error('[sessionLogin] ❌ Failed to set session cookie:', response.status, response.statusText, responseBody);
+      console.error('[sessionLogin] ❌ Authentication failed:', response.status, response.statusText, responseBody);
     }
   } catch (error) {
     console.error('[sessionLogin] 🚫 Login failed:', error.message, error.code);
