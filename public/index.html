@@ -16,7 +16,7 @@
   <!-- App logic and UI scripts -->
   <script type="module" src="/js/main.js" defer></script>
   <script type="module" src="/js/injectNav.js" defer></script>
-  <script type="module" src="/js/sessionLogin.js?v=1" defer></script>
+  <script type="module" src="/js/sessionLogin.js" defer></script>
 
   <style>
     /* 🔧 Logo Styling */
@@ -85,13 +85,11 @@
     <div class="container">
       <img src="logo1024.png" alt="SwingTrader Logo" id="logo" />
       <div class="login-box">
-        <form id="loginForm">
-          <label for="emailInput">Email</label>
-          <input type="email" id="emailInput" required />
-          <label for="passwordInput">Password</label>
-          <input type="password" id="passwordInput" required />
-          <button id="loginBtn" type="button">Login</button>
-        </form>
+        <label for="emailInput">Email</label>
+        <input type="email" id="emailInput" />
+        <label for="passwordInput">Password</label>
+        <input type="password" id="passwordInput" />
+        <button id="loginBtn">Login</button>
       </div>
     </div>
   </main>
@@ -101,3 +99,5 @@
   </footer>
 </body>
 </html>
+    
+  
