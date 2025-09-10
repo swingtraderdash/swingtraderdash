@@ -13,7 +13,7 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     const user = userCredential.user;
 
     const idToken = await user.getIdToken(true);
-    console.log('[sessionLogin] 🔍 Sending idToken');
+    console.log('[sessionLogin] 🔍 Sending idToken to https://sessionlogin-mtxejoobqq-uc.a.run.app');
 
     const response = await fetch("https://sessionlogin-mtxejoobqq-uc.a.run.app", {
       method: "POST",
@@ -25,10 +25,13 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
       credentials: "include"
     });
 
+    const responseBody = await response.json();
+    console.log('[sessionLogin] Response:', response.status, responseBody);
+
     if (response.ok) {
       console.log('[sessionLogin] ✅ Session cookie set');
     } else {
-      console.error('[sessionLogin] ❌ Failed to set session cookie:', response.status, response.statusText);
+      console.error('[sessionLogin] ❌ Failed to set session cookie:', response.status, response.statusText, responseBody);
     }
   } catch (error) {
     console.error('[sessionLogin] 🚫 Login failed:', error.message);
