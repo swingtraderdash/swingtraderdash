@@ -46,7 +46,6 @@ loginBtn.addEventListener("click", async () => {
 
     if (response.ok) {
       console.log('[sessionLogin] ✅ Authentication verified');
-      window.location.href = '/trialpage';
     } else {
       console.error('[sessionLogin] ❌ Authentication failed:', response.status, response.statusText, responseBody);
     }
