@@ -12,6 +12,7 @@ onAuthStateChanged(auth, user => {
     });
   } else {
     console.warn("🚫 No user signed in");
+    userToken = null;
   }
 });
 
@@ -28,7 +29,7 @@ export function injectNav() {
         <nav>
           <ul>
             <li><a href="/index.html">Home</a></li> 
-            <li><a href="/watchlist.html">Watchlist</a></li>
+            <li><a href="#" id="watchlist-link">Watchlist</a></li>
             <li class="dropdown">
               <a href="#">Alerts</a>
               <ul class="dropdown-content">
@@ -42,6 +43,38 @@ export function injectNav() {
           </ul>
         </nav>
       `;
+
+      // Add click handler for watchlist link
+      const watchlistLink = document.getElementById("watchlist-link");
+      if (watchlistLink) {
+        watchlistLink.addEventListener("click", async (e) => {
+          e.preventDefault();
+          if (!userToken) {
+            console.warn("🚫 No token, redirecting to /index.html");
+            window.location.href = "/index.html";
+            return;
+          }
+
+          try {
+            const response = await fetch("/watchlist.html", {
+              headers: {
+                Authorization: `Bearer ${userToken}`
+              }
+            });
+            if (response.ok) {
+              console.log("✅ Watchlist page accessed");
+              window.location.href = "/watchlist.html";
+            } else {
+              console.warn("🚫 Access denied, redirecting to /index.html");
+              window.location.href = "/index.html";
+            }
+          } catch (error) {
+            console.error("🔥 Error accessing watchlist:", error);
+            window.location.href = "/index.html";
+          }
+        });
+      }
+
       console.log("[injectNav] ✅ Nav injected");
     } else {
       console.warn("[injectNav] ⏳ Waiting for #nav to appear...");
