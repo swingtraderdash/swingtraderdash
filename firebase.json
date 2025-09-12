@@ -8,6 +8,10 @@
     ],
     "rewrites": [
       {
+        "source": "/watchlist.html",
+        "function": "protectedPage"
+      },
+      {
         "source": "/blanktemplate",
         "function": "pageGatekeeper"
       },
@@ -62,4 +66,3 @@
     "singleProjectMode": true
   }
 }
-
