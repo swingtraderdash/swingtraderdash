@@ -67,10 +67,13 @@ export function injectNav() {
             Authorization: `Bearer ${userToken}`
           }
         });
-        console.log("📡 Fetch response:", response.status);
+        console.log("📡 Fetch response status:", response.status);
         if (response.ok) {
-          console.log("✅ Watchlist page accessed");
-          window.location.href = "/watchlist.html";
+          const content = await response.text();
+          console.log("✅ Watchlist content received:", content.substring(0, 100) + "...");
+          document.open();
+          document.write(content);
+          document.close();
         } else {
           console.warn("🚫 Access denied, status:", response.status);
           window.location.href = "/index.html";
