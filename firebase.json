@@ -16,6 +16,14 @@
         "function": "protectedPage"
       },
       {
+        "source": "/manage.html",
+        "function": "protectedPage"
+      },
+      {
+        "source": "/triggeredalerts.html",
+        "function": "protectedPage"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
