@@ -12,18 +12,6 @@
         "function": "protectedPage"
       },
       {
-        "source": "/blanktemplate",
-        "function": "pageGatekeeper"
-      },
-      {
-        "source": "/blanktemplate.html",
-        "function": "pageGatekeeper"
-      },
-      {
-        "source": "/blanktemplate/**",
-        "function": "pageGatekeeper"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
