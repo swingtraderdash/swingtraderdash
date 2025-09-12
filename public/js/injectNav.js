@@ -41,8 +41,7 @@ export function injectNav() {
             <li><a href="/triggeredalerts.html">Triggered</a></li>
           </ul>
         </li>              
-        <li><a href="/blanktemplate.html">Blank</a></li>
-        <li><a href="/logout.html">Logout</a></li>
+                <li><a href="/logout.html">Logout</a></li>
       </ul>
     </nav>
   `;
