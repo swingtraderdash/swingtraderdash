@@ -12,6 +12,10 @@
         "function": "protectedPage"
       },
       {
+        "source": "/set-new.html",
+        "function": "protectedPage"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
