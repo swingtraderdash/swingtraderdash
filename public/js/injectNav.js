@@ -41,50 +41,57 @@ export function injectNav() {
             <li><a href="/triggeredalerts.html">Triggered</a></li>
           </ul>
         </li>              
-                <li><a href="/logout.html">Logout</a></li>
+        <li><a href="/logout.html">Logout</a></li>
       </ul>
     </nav>
   `;
   console.log("[injectNav] Nav HTML injected");
-
-  const watchlistLink = document.getElementById("watchlist-link");
-  if (watchlistLink) {
-    console.log("[injectNav] Watchlist link found, adding listener");
-    watchlistLink.addEventListener("click", async (e) => {
-      e.preventDefault();
-      console.log("[injectNav] Watchlist click detected");
-      if (!userToken) {
-        console.warn("🚫 No token, redirecting to /index.html");
-        window.location.href = "/index.html";
-        return;
-      }
-
-      console.log("▶️ Fetching /watchlist.html with token...");
-      try {
-        const response = await fetch("/watchlist.html", {
-          headers: {
-            Authorization: `Bearer ${userToken}`
-          }
-        });
-        console.log("📡 Fetch response status:", response.status);
-        if (response.ok) {
-          const content = await response.text();
-          console.log("✅ Watchlist content received:", content.substring(0, 100) + "...");
-          document.open();
-          document.write(content);
-          document.close();
-        } else {
-          console.warn("🚫 Access denied, status:", response.status);
-          window.location.href = "/index.html";
-        }
-      } catch (error) {
-        console.error("🔥 Error accessing watchlist:", error);
-        window.location.href = "/index.html";
-      }
-    });
-  } else {
-    console.error("[injectNav] 🚫 Watchlist link not found");
-  }
-
-  console.log("[injectNav] ✅ Nav injected");
 }
+
+// Handle watchlist link click
+const watchlistLink = document.getElementById("watchlist-link");
+if (watchlistLink) {
+  console.log("[injectNav] Watchlist link found, adding listener");
+  watchlistLink.addEventListener("click", async (e) => {
+    e.preventDefault();
+    console.log("[injectNav] Watchlist click detected at:", Date.now());
+    if (!userToken) {
+      console.warn("🚫 No token, redirecting to /index.html");
+      window.location.href = "/index.html";
+      return;
+    }
+
+    console.log("▶️ Fetching /watchlist.html with token...");
+    try {
+      const startTime = Date.now();
+      const response = await fetch("/watchlist.html", {
+        headers: {
+          Authorization: `Bearer ${userToken}`
+        }
+      });
+      const endTime = Date.now();
+      console.log(`📡 Fetch response status: ${response.status}, took ${endTime - startTime}ms`);
+      if (response.ok) {
+        console.log("✅ Watchlist content received");
+        document.open();
+        document.write(await response.text());
+        document.close();
+        // Re-inject nav bar after content load
+        setTimeout(() => {
+          console.log("[injectNav] Re-injecting nav after watchlist load");
+          injectNav();
+        }, 0);
+      } else {
+        console.warn("🚫 Access denied, status:", response.status);
+        window.location.href = "/index.html";
+      }
+    } catch (error) {
+      console.error("🔥 Error accessing watchlist:", error);
+      window.location.href = "/index.html";
+    }
+  });
+} else {
+  console.error("[injectNav] 🚫 Watchlist link not found");
+}
+
+console.log("[injectNav] ✅ Initial nav setup complete");
