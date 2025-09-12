@@ -32,5 +32,14 @@
     </div>
   </footer>
   <script type="module" src="/js/main.js"></script>
+  <script>
+    // Re-inject nav bar after page load
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("[watchlist.html] DOM loaded, re-injecting nav");
+      if (typeof injectNav === 'function') {
+        injectNav();
+      }
+    });
+  </script>
 </body>
 </html>
