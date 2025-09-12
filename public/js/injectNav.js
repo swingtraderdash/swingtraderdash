@@ -36,9 +36,9 @@ export function injectNav() {
         <li class="dropdown">
           <a href="#">Alerts</a>
           <ul class="dropdown-content">
-            <li><a href="/set-new.html">Set New</a></li>
-            <li><a href="/manage.html">Manage</a></li>
-            <li><a href="/triggeredalerts.html">Triggered</a></li>
+            <li><a href="#" id="set-new-link">Set New</a></li>
+            <li><a href="#" id="manage-link">Manage</a></li>
+            <li><a href="#" id="triggeredalerts-link">Triggered</a></li>
           </ul>
         </li>              
         <li><a href="/logout.html">Logout</a></li>
@@ -47,48 +47,58 @@ export function injectNav() {
   `;
   console.log("[injectNav] Nav HTML injected at:", Date.now());
 
-  // Attach watchlist link listener
-  const watchlistLink = document.getElementById("watchlist-link");
-  if (watchlistLink) {
-    console.log("[injectNav] Watchlist link found, adding listener at:", Date.now());
-    watchlistLink.addEventListener("click", async (e) => {
-      e.preventDefault();
-      console.log("[injectNav] Watchlist click detected at:", Date.now());
-      if (!userToken) {
-        console.warn("🚫 No token, redirecting to /index.html");
-        window.location.href = "/index.html";
-        return;
-      }
+  // Define protected pages
+  const protectedLinks = [
+    { id: "watchlist-link", path: "/watchlist.html" },
+    { id: "set-new-link", path: "/set-new.html" },
+    { id: "manage-link", path: "/manage.html" },
+    { id: "triggeredalerts-link", path: "/triggeredalerts.html" }
+  ];
 
-      console.log("▶️ Fetching /watchlist.html with token...");
-      try {
-        const startTime = Date.now();
-        const response = await fetch("/watchlist.html", {
-          headers: {
-            Authorization: `Bearer ${userToken}`
+  // Attach listeners for protected pages
+  protectedLinks.forEach(link => {
+    const element = document.getElementById(link.id);
+    if (element) {
+      console.log(`[injectNav] ${link.id} found, adding listener at:`, Date.now());
+      element.addEventListener("click", async (e) => {
+        e.preventDefault();
+        console.log(`[injectNav] ${link.id} click detected at:`, Date.now());
+        if (!userToken) {
+          console.warn("🚫 No token, redirecting to /index.html");
+          window.location.href = "/index.html";
+          return;
+        }
+
+        console.log(`▶️ Fetching ${link.path} with token...`);
+        try {
+          const startTime = Date.now();
+          const response = await fetch(link.path, {
+            headers: {
+              Authorization: `Bearer ${userToken}`
+            }
+          });
+          const endTime = Date.now();
+          console.log(`📡 Fetch response status for ${link.path}: ${response.status}, took ${endTime - startTime}ms`);
+          if (response.ok) {
+            console.log(`✅ ${link.path} content received`);
+            document.open();
+            document.write(await response.text());
+            document.close();
+            console.log(`[injectNav] Re-injecting nav after ${link.path} load at:`, Date.now());
+            injectNav();
+          } else {
+            console.warn(`🚫 Access denied for ${link.path}, status: ${response.status}, text:`, await response.text());
+            window.location.href = "/index.html";
           }
-        });
-        const endTime = Date.now();
-        console.log(`📡 Fetch response status: ${response.status}, took ${endTime - startTime}ms`);
-        if (response.ok) {
-          console.log("✅ Watchlist content received");
-          document.open();
-          document.write(await response.text());
-          document.close();
-          console.log("[injectNav] Re-injecting nav after watchlist load at:", Date.now());
-          injectNav();
-        } else {
-          console.warn("🚫 Access denied, status:", response.status, "text:", await response.text());
+        } catch (error) {
+          console.error(`🔥 Error accessing ${link.path}:`, error.message);
           window.location.href = "/index.html";
         }
-      } catch (error) {
-        console.error("🔥 Error accessing watchlist:", error.message);
-        window.location.href = "/index.html";
-      }
-    });
-  } else {
-    console.error("[injectNav] 🚫 Watchlist link not found after injection");
-  }
+      });
+    } else {
+      console.error(`[injectNav] 🚫 ${link.id} not found after injection`);
+    }
+  });
 
   console.log("[injectNav] ✅ Nav injected at:", Date.now());
 }
