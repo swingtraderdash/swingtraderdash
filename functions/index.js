@@ -20,7 +20,7 @@ exports.testFunction = functions.https.onRequest((req, res) => {
   res.status(410).send('Function is deprecated');
 });
 
-// Protected page function for watchlist.html
+// Protected page function for watchlist.html, set-new.html, manage.html, triggeredalerts.html
 exports.protectedPage = functions.https.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
   res.set('Access-Control-Allow-Methods', 'GET');
@@ -36,11 +36,18 @@ exports.protectedPage = functions.https.onRequest(async (req, res) => {
 
   try {
     await admin.auth().verifyIdToken(idToken);
-    logger.info('Token verified, serving protected page');
+    logger.info('Token verified, serving protected page for:', req.path);
 
-    const filePath = path.join(__dirname, 'protected', 'watchlist.html');
-    const fileContent = await fs.readFile(filePath, 'utf8');
-    res.status(200).send(fileContent);
+    const filePath = path.join(__dirname, 'protected', req.path.replace(/^\//, ''));
+    logger.info('Attempting to serve file:', filePath);
+    try {
+      const fileContent = await fs.readFile(filePath, 'utf8');
+      logger.info('Serving file content for:', req.path, 'Content preview:', fileContent.substring(0, 100) + '...');
+      res.status(200).set('Content-Type', 'text/html').send(fileContent);
+    } catch (error) {
+      logger.error('File read error for:', filePath, 'Error:', error.message);
+      res.status(404).send('File not found');
+    }
   } catch (error) {
     logger.error('Token verification failed:', error);
     res.redirect(302, '/index.html');
