@@ -62,7 +62,7 @@ export function injectNav() {
       console.log(`[injectNav] ${link.id} found, adding listener at:`, Date.now());
       element.addEventListener("click", async (e) => {
         e.preventDefault();
-        console.log(`[injectNav] ${link.id} click detected at:`, Date.now());
+        console.log(`[injectNav] ${link.id} click detected, fetching ${link.path} at:`, Date.now());
         if (!userToken) {
           console.warn("🚫 No token, redirecting to /index.html");
           window.location.href = "/index.html";
@@ -80,9 +80,10 @@ export function injectNav() {
           const endTime = Date.now();
           console.log(`📡 Fetch response status for ${link.path}: ${response.status}, took ${endTime - startTime}ms`);
           if (response.ok) {
-            console.log(`✅ ${link.path} content received`);
+            const text = await response.text();
+            console.log(`✅ ${link.path} content received:`, text.substring(0, 100) + "...");
             document.open();
-            document.write(await response.text());
+            document.write(text);
             document.close();
             console.log(`[injectNav] Re-injecting nav after ${link.path} load at:`, Date.now());
             injectNav();
