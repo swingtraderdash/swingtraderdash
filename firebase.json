@@ -20,6 +20,10 @@
         "function": "protectedPage"
       },
       {
+        "source": "/news.html",
+        "function": "protectedPage"
+      },
+      {
         "source": "/triggeredalerts.html",
         "function": "protectedPage"
       },
