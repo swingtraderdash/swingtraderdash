@@ -75,6 +75,7 @@ export function injectNav() {
     { id: "set-new-link", path: "/set-new.html" },
     { id: "manage-link", path: "/manage.html" },
     { id: "triggeredalerts-link", path: "/triggeredalerts.html" }
+    { id: "news-link", path: "/news.html" }
   ];
 
   // Attach listeners for protected pages
