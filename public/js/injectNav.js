@@ -41,7 +41,7 @@ export function injectNav() {
             <li><a href="#" id="triggeredalerts-link">Triggered</a></li>
           </ul>
         </li> 
-         <li><a href="#" id="news-link">News</a></li>
+        <li><a href="#" id="news-link">News</a></li>
         <li><a href="/logout.html">Logout</a></li>
       </ul>
     </nav>
@@ -74,7 +74,7 @@ export function injectNav() {
     { id: "watchlist-link", path: "/watchlist.html" },
     { id: "set-new-link", path: "/set-new.html" },
     { id: "manage-link", path: "/manage.html" },
-    { id: "triggeredalerts-link", path: "/triggeredalerts.html" }
+    { id: "triggeredalerts-link", path: "/triggeredalerts.html" },
     { id: "news-link", path: "/news.html" }
   ];
 
@@ -126,3 +126,4 @@ export function injectNav() {
 
   console.log("[injectNav] ✅ Nav injected at:", Date.now());
 }
+    
