@@ -44,8 +44,29 @@ export function injectNav() {
         <li><a href="/logout.html">Logout</a></li>
       </ul>
     </nav>
+    <style>
+      .dropdown-content {
+        background-color: white;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        z-index: 1000;
+        min-width: 160px;
+        padding: 8px 0;
+      }
+      .dropdown-content li a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+      }
+      .dropdown-content li a:hover {
+        background-color: #f1f1f1;
+        color: blue;
+      }
+    </style>
   `;
-  console.log("[injectNav] Nav HTML injected at:", Date.now());
+  console.log("[injectNav] Nav HTML and styles injected at:", Date.now());
 
   // Define protected pages
   const protectedLinks = [
