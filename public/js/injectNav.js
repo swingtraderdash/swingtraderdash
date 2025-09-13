@@ -40,7 +40,8 @@ export function injectNav() {
             <li><a href="#" id="manage-link">Manage</a></li>
             <li><a href="#" id="triggeredalerts-link">Triggered</a></li>
           </ul>
-        </li>              
+        </li> 
+         <li><a href="#" id="news-link">News</a></li>
         <li><a href="/logout.html">Logout</a></li>
       </ul>
     </nav>
