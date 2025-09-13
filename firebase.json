@@ -19,12 +19,12 @@
         "source": "/manage.html",
         "function": "protectedPage"
       },
-      {
-        "source": "/news.html",
+           {
+        "source": "/triggeredalerts.html",
         "function": "protectedPage"
       },
-      {
-        "source": "/triggeredalerts.html",
+       {
+        "source": "/news.html",
         "function": "protectedPage"
       },
       {
