@@ -1,36 +1,173 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Watchlist</title>
-  <link rel="stylesheet" href="/css/main.css" />
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      display: flex;
-      flex-direction: column;
-    }
-    main {
-      flex: 1;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwingTrader - Watchlist</title>
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <script type="module" src="/js/firebaseConfig.js" defer></script>
+    <script type="module" src="/js/injectNav.js" defer></script>
+    <script type="module" src="/js/main.js" defer></script>
 </head>
 <body>
-  <div id="nav"></div>
-  <main>
-    <h1>Watchlist</h1>
-    <p>This page is only accessible to authenticated users, this is the page you want to see!</p>
-  </main>
-  <footer>
-    <div class="container">
-      <p>&copy; 2025 SwingTrader. All rights reserved.</p>
-    </div>
-  </footer>
-  <script type="module" src="/js/main.js"></script>
+    <div id="nav"></div>
+    <main class="main">
+        <div class="container">
+            <section class="page-content">
+                <h2>Watchlist</h2>
+                <p>Add up to 200 ticker symbols maximum 'per batch' to your watchlist for tracking.</p>
+                
+                <div class="watchlist-input">
+                    <h3>Add Tickers</h3>
+                    <form id="ticker-form">
+                        <div class="form-group">
+                            <label for="ticker-input">Enter ticker symbols (separated by commas):</label>
+                            <textarea 
+                                id="ticker-input" 
+                                name="tickers" 
+                                rows="3" 
+                                placeholder="AAPL, GOOGL, MSFT, TSLA..."
+                                maxlength="2000">
+                            </textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="add-button">Add to Watchlist</button>
+                    </form>
+                    <div id="feedback" style="color: red; margin-top: 10px;"></div>
+                </div>
+
+                <div class="watchlist-display">
+                    <h3>Your Watchlist</h3>
+                    <div id="ticker-list">
+                        <!-- Tickers will be displayed here -->
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 SwingTrader. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { saveWatchlist, getWatchlist } from '/js/storage.js';
+
+        const auth = getAuth();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const tickerForm = document.getElementById('ticker-form');
+            const tickerInput = document.getElementById('ticker-input');
+            const tickerList = document.getElementById('ticker-list');
+            
+            displayWatchlist();
+            
+            if (tickerForm) {
+                tickerForm.addEventListener('submit', handleTickerSubmission);
+            }
+        });
+
+        async function handleTickerSubmission(event) {
+            event.preventDefault();
+            
+            const tickerInput = document.getElementById('ticker-input');
+            const feedback = document.getElementById('feedback');
+            const inputValue = tickerInput.value.trim();
+            
+            feedback.textContent = '';
+            
+            if (!inputValue) {
+                feedback.textContent = '🚫 Please enter at least one ticker.';
+                return;
+            }
+
+            const validTickerRegex = /^[A-Za-z.]+$/;
+            const tickers = inputValue.split(',').map(t => t.trim()).filter(Boolean);
+
+            const invalid = tickers.filter(t => !validTickerRegex.test(t));
+            const valid = tickers.filter(t => validTickerRegex.test(t));
+
+            if (invalid.length > 0) {
+                feedback.textContent = `🚫 Invalid tickers: ${invalid.join(', ')}. Only letters and full stops are allowed.`;
+                return;
+            }
+
+            if (valid.length === 0) {
+                feedback.textContent = '🚫 No valid ticker symbols found. Please check your input.';
+                return;
+            }
+
+            const upperCaseTickers = valid.map(t => t.toUpperCase());
+            const uniqueTickers = [...new Set(upperCaseTickers)];
+
+            const existingWatchlist = await getWatchlist();
+            const mergedWatchlist = [...new Set([...existingWatchlist, ...uniqueTickers])];
+            
+            if (mergedWatchlist.length > 200) {
+                feedback.textContent = `🚫 Cannot add all tickers. Maximum limit is 200 tickers. You currently have ${existingWatchlist.length} tickers.`;
+                return;
+            }
+
+            const success = await saveWatchlist(mergedWatchlist);
+            
+            if (success) {
+                tickerInput.value = '';
+                await displayWatchlist();
+                feedback.style.color = 'green';
+                feedback.textContent = `✅ Successfully added ${uniqueTickers.length} ticker(s) to your watchlist.`;
+                setTimeout(() => {
+                    feedback.style.color = 'red';
+                    feedback.textContent = '';
+                }, 3000);
+            } else {
+                feedback.textContent = '🚫 Failed to save watchlist. Please try again.';
+            }
+        }
+
+        async function displayWatchlist() {
+            const tickerList = document.getElementById('ticker-list');
+            const watchlist = await getWatchlist();
+            
+            if (!tickerList) return;
+
+            if (watchlist.length === 0) {
+                tickerList.innerHTML = '<p>No tickers in your watchlist yet. Add some using the form above.</p>';
+                return;
+            }
+
+            const sortedTickers = [...watchlist].sort();
+            
+            const tickerHTML = sortedTickers.map(ticker => `
+                <div class="ticker-item">
+                    <span class="ticker-symbol">${ticker}</span>
+                    <button type="button" class="ticker-remove" onclick="removeTicker('${ticker}')">×</button>
+                </div>
+            `).join('');
+
+            tickerList.innerHTML = `
+                <div class="ticker-count">
+                    <p>Total tickers: ${sortedTickers.length} / 200</p>
+                </div>
+                <div class="ticker-grid">
+                    ${tickerHTML}
+                </div>
+            `;
+        }
+
+        window.removeTicker = async function(ticker) {
+            const currentWatchlist = await getWatchlist();
+            const updatedWatchlist = currentWatchlist.filter(t => t !== ticker);
+            const success = await saveWatchlist(updatedWatchlist);
+            
+            if (success) {
+                await displayWatchlist();
+            } else {
+                alert('Failed to remove ticker. Please try again.');
+            }
+        };
+    </script>
 </body>
 </html>
