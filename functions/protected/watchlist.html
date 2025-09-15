@@ -16,11 +16,11 @@
         <div class="container">
             <section class="page-content">
                 <h2>Watchlist</h2>
-                <p>Add up to 200 ticker symbols maximum 'per batch' to your watchlist for tracking.</p>
+                <p>Add up to 200 ticker symbols per batch to your watchlist for tracking.</p>
                 
                 <div class="watchlist-input">
                     <h3>Add Tickers</h3>
-                    <form id="ticker-form">
+                    <form id="ticker-form" method="POST">
                         <div class="form-group">
                             <label for="ticker-input">Enter ticker symbols (separated by commas):</label>
                             <textarea 
@@ -58,81 +58,75 @@
 
         const auth = getAuth();
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const tickerForm = document.getElementById('ticker-form');
             const tickerInput = document.getElementById('ticker-input');
             const tickerList = document.getElementById('ticker-list');
             
-            displayWatchlist();
+            await displayWatchlist();
             
             if (tickerForm) {
-                tickerForm.addEventListener('submit', handleTickerSubmission);
+                tickerForm.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+                    
+                    const inputValue = tickerInput.value.trim();
+                    const feedback = document.getElementById('feedback');
+                    feedback.textContent = '';
+                    
+                    if (!inputValue) {
+                        feedback.textContent = '🚫 Please enter at least one ticker.';
+                        return;
+                    }
+
+                    const validTickerRegex = /^[A-Za-z.]+$/;
+                    const tickers = inputValue.split(',').map(t => t.trim()).filter(Boolean);
+
+                    const invalid = tickers.filter(t => !validTickerRegex.test(t));
+                    if (invalid.length > 0) {
+                        feedback.textContent = `🚫 Invalid tickers: ${invalid.join(', ')}. Only letters and full stops are allowed.`;
+                        return;
+                    }
+
+                    if (tickers.length === 0) {
+                        feedback.textContent = '🚫 No valid ticker symbols found. Please check your input.';
+                        return;
+                    }
+
+                    if (tickers.length > 200) {
+                        feedback.textContent = `🚫 Cannot add more than 200 tickers in one batch. You entered ${tickers.length}.`;
+                        return;
+                    }
+
+                    const upperCaseTickers = tickers.map(t => t.toUpperCase());
+                    const uniqueTickers = [...new Set(upperCaseTickers)];
+
+                    const existingWatchlist = await getWatchlist();
+                    const mergedWatchlist = [...new Set([...existingWatchlist, ...uniqueTickers])].sort();
+                    
+                    const success = await saveWatchlist(mergedWatchlist);
+                    
+                    if (success) {
+                        tickerInput.value = '';
+                        await displayWatchlist();
+                        feedback.style.color = 'green';
+                        feedback.textContent = `✅ Successfully added ${uniqueTickers.length} ticker(s) to your watchlist.`;
+                        setTimeout(() => {
+                            feedback.style.color = 'red';
+                            feedback.textContent = '';
+                        }, 3000);
+                    } else {
+                        feedback.textContent = '🚫 Failed to save watchlist. Please try again.';
+                    }
+                });
             }
         });
 
-        async function handleTickerSubmission(event) {
-            event.preventDefault();
-            
-            const tickerInput = document.getElementById('ticker-input');
-            const feedback = document.getElementById('feedback');
-            const inputValue = tickerInput.value.trim();
-            
-            feedback.textContent = '';
-            
-            if (!inputValue) {
-                feedback.textContent = '🚫 Please enter at least one ticker.';
-                return;
-            }
-
-            const validTickerRegex = /^[A-Za-z.]+$/;
-            const tickers = inputValue.split(',').map(t => t.trim()).filter(Boolean);
-
-            const invalid = tickers.filter(t => !validTickerRegex.test(t));
-            const valid = tickers.filter(t => validTickerRegex.test(t));
-
-            if (invalid.length > 0) {
-                feedback.textContent = `🚫 Invalid tickers: ${invalid.join(', ')}. Only letters and full stops are allowed.`;
-                return;
-            }
-
-            if (valid.length === 0) {
-                feedback.textContent = '🚫 No valid ticker symbols found. Please check your input.';
-                return;
-            }
-
-            const upperCaseTickers = valid.map(t => t.toUpperCase());
-            const uniqueTickers = [...new Set(upperCaseTickers)];
-
-            const existingWatchlist = await getWatchlist();
-            const mergedWatchlist = [...new Set([...existingWatchlist, ...uniqueTickers])];
-            
-            if (mergedWatchlist.length > 200) {
-                feedback.textContent = `🚫 Cannot add all tickers. Maximum limit is 200 tickers. You currently have ${existingWatchlist.length} tickers.`;
-                return;
-            }
-
-            const success = await saveWatchlist(mergedWatchlist);
-            
-            if (success) {
-                tickerInput.value = '';
-                await displayWatchlist();
-                feedback.style.color = 'green';
-                feedback.textContent = `✅ Successfully added ${uniqueTickers.length} ticker(s) to your watchlist.`;
-                setTimeout(() => {
-                    feedback.style.color = 'red';
-                    feedback.textContent = '';
-                }, 3000);
-            } else {
-                feedback.textContent = '🚫 Failed to save watchlist. Please try again.';
-            }
-        }
-
         async function displayWatchlist() {
             const tickerList = document.getElementById('ticker-list');
-            const watchlist = await getWatchlist();
-            
             if (!tickerList) return;
 
+            const watchlist = await getWatchlist();
+            
             if (watchlist.length === 0) {
                 tickerList.innerHTML = '<p>No tickers in your watchlist yet. Add some using the form above.</p>';
                 return;
@@ -149,7 +143,7 @@
 
             tickerList.innerHTML = `
                 <div class="ticker-count">
-                    <p>Total tickers: ${sortedTickers.length} / 200</p>
+                    <p>Total tickers: ${sortedTickers.length}</p>
                 </div>
                 <div class="ticker-grid">
                     ${tickerHTML}
@@ -159,7 +153,7 @@
 
         window.removeTicker = async function(ticker) {
             const currentWatchlist = await getWatchlist();
-            const updatedWatchlist = currentWatchlist.filter(t => t !== ticker);
+            const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
             const success = await saveWatchlist(updatedWatchlist);
             
             if (success) {
@@ -171,3 +165,6 @@
     </script>
 </body>
 </html>
+            
+          
+                
