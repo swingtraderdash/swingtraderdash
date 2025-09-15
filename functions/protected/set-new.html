@@ -17,6 +17,38 @@
     }
     main {
       flex: 1;
+      padding: 20px;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 400px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select {
+      padding: 8px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #message {
+      margin-top: 10px;
+      color: green;
+    }
+    #error {
+      margin-top: 10px;
+      color: red;
     }
   </style>
 </head>
@@ -24,13 +56,95 @@
   <div id="nav"></div>
   <main>
     <h1>Set New Alert</h1>
-    <p>This page is only accessible to authenticated users.</p>
+    <p>Create a new alert template for a ticker.</p>
+    <form id="alert-form">
+      <label for="ticker">Ticker:</label>
+      <select id="ticker" required>
+        <option value="">Select a ticker</option>
+        <!-- Populated dynamically -->
+      </select>
+      <label for="condition">Condition:</label>
+      <select id="condition" required>
+        <option value="price_above_sma50">Price > SMA50</option>
+        <option value="price_below_sma50">Price < SMA50</option>
+        <option value="rsi_above_70">RSI > 70</option>
+        <option value="rsi_below_30">RSI < 30</option>
+      </select>
+      <label for="threshold">Threshold Value:</label>
+      <input type="number" id="threshold" step="0.01" required placeholder="e.g., 100.50" />
+      <button type="submit">Create Alert Template</button>
+    </form>
+    <div id="message"></div>
+    <div id="error"></div>
   </main>
   <footer>
     <div class="container">
       <p>&copy; 2025 SwingTrader. All rights reserved.</p>
     </div>
   </footer>
-  <script type="module" src="/js/main.js"></script>
+  <script type="module">
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { app } from "/js/firebaseConfig.js";
+    import { injectNav } from "/js/injectNav.js";
+
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Inject nav bar
+    injectNav();
+
+    // Populate ticker dropdown
+    async function loadTickers() {
+      try {
+        const tickerSelect = document.getElementById("ticker");
+        const querySnapshot = await getDocs(collection(db, "tickers"));
+        querySnapshot.forEach(doc => {
+          const option = document.createElement("option");
+          option.value = doc.id;
+          option.text = doc.id;
+          tickerSelect.appendChild(option);
+        });
+        console.log("[set-new] Tickers loaded");
+      } catch (error) {
+        console.error("[set-new] Error loading tickers:", error);
+        document.getElementById("error").textContent = "Failed to load tickers.";
+      }
+    }
+
+    // Handle form submission
+    document.getElementById("alert-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const user = auth.currentUser;
+      if (!user) {
+        document.getElementById("error").textContent = "You must be logged in.";
+        return;
+      }
+
+      const ticker = document.getElementById("ticker").value;
+      const condition = document.getElementById("condition").value;
+      const threshold = parseFloat(document.getElementById("threshold").value);
+
+      try {
+        await addDoc(collection(db, "userAlertTemplates"), {
+          userId: user.uid,
+          ticker,
+          condition,
+          threshold,
+          createdAt: new Date().toISOString()
+        });
+        document.getElementById("message").textContent = "Alert template created successfully!";
+        document.getElementById("error").textContent = "";
+        console.log("[set-new] Alert template saved for:", ticker);
+      } catch (error) {
+        console.error("[set-new] Error saving alert template:", error);
+        document.getElementById("error").textContent = "Failed to save alert template.";
+        document.getElementById("message").textContent = "";
+      }
+    });
+
+    // Load tickers on page load
+    loadTickers();
+  </script>
 </body>
 </html>
