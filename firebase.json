@@ -6,6 +6,17 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "headers": [
+      {
+        "source": "/js/**",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/javascript"
+          }
+        ]
+      }
+    ],
     "rewrites": [
       {
         "source": "/watchlist.html",
@@ -19,11 +30,11 @@
         "source": "/manage.html",
         "function": "protectedPage"
       },
-           {
+      {
         "source": "/triggeredalerts.html",
         "function": "protectedPage"
       },
-       {
+      {
         "source": "/news.html",
         "function": "protectedPage"
       },
