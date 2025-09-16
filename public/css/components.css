@@ -149,3 +149,15 @@ footer {
   font-size: 0.9rem;
   color: #555;
 }
+/* 🔷 Ticker Input Box */
+#ticker-input {
+  width: 100%;
+  height: 120px;
+  font-size: 1rem;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
