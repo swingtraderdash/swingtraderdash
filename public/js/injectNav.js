@@ -42,7 +42,12 @@ export function injectNav() {
           </ul>
         </li> 
         <li><a href="#" id="news-link">News</a></li>
-        <li><a href="/logout.html">Logout</a></li>
+        <li class="dropdown">
+          <a href="#">API</a>
+          <ul class="dropdown-content">
+            <li><a href="#" id="history-link">History</a></li>
+             </ul>       
+         <li><a href="/logout.html">Logout</a></li>
       </ul>
     </nav>
     <style>
