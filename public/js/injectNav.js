@@ -45,7 +45,7 @@ export function injectNav() {
         <li class="dropdown">
           <a href="#">API</a>
           <ul class="dropdown-content">
-            <li><a href="#" id="history-link">History</a></li>
+            <li><a href="#" id="history-link">API</a></li>
              </ul>       
          <li><a href="/logout.html">Logout</a></li>
       </ul>
@@ -80,6 +80,7 @@ export function injectNav() {
     { id: "set-new-link", path: "/set-new.html" },
     { id: "manage-link", path: "/manage.html" },
     { id: "triggeredalerts-link", path: "/triggeredalerts.html" },
+    { id: "history-link", path: "/history.html" },
     { id: "news-link", path: "/news.html" }
   ];
 
