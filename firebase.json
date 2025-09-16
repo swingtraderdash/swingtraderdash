@@ -39,6 +39,10 @@
         "function": "protectedPage"
       },
       {
+        "source": "/history.html",
+        "function": "protectedPage"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
