@@ -77,14 +77,32 @@
 
   <script type="module">
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { saveWatchlist, getWatchlist } from '/js/storage.js';
     import { injectNav } from "/js/injectNav.js";
+    import { app } from "/js/firebaseConfig.js";
 
     injectNav(); // ✅ Explicit navbar injection
 
     const auth = getAuth();
+    const db = getFirestore(app);
 
     async function fetchTickerMetadata(ticker) {
+      try {
+        const sectorDoc = doc(db, 'sectors', ticker);
+        const cachedSnap = await getDoc(sectorDoc);
+        if (cachedSnap.exists()) {
+          const cached = cachedSnap.data();
+          return {
+            symbol: cached.symbol || ticker,
+            name: cached.name || "Unknown",
+            sector: cached.sector || "Unknown"
+          };
+        }
+      } catch (error) {
+        console.warn(`⚠️ Firestore lookup failed for ${ticker}:`, error.message);
+      }
+
       const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=134b85cc4ea8fe62c59ee2fca25fe5b0033117cf`;
       try {
         const response = await fetch(url);
@@ -210,6 +228,7 @@
   </script>
 </body>
 </html>
+
 
        
       
