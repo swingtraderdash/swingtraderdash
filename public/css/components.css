@@ -107,12 +107,6 @@ footer {
 }
 
 /* 🔷 Watchlist Container Styling (Imported from Replit) */
-.watchlist-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
 .watchlist-input {
   margin-bottom: 2rem;
   padding: 1.5rem;
@@ -180,4 +174,3 @@ footer {
 }
 
  
-  
