@@ -19,6 +19,7 @@ export async function saveWatchlist(tickers) {
 
         // Cache metadata for each ticker in sectors collection
         for (const ticker of tickers) {
+            console.log(`[storage] 🔍 Checking metadata for ${ticker}`);
             const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=134b85cc4ea8fe62c59ee2fca25fe5b0033117cf`;
             try {
                 const response = await fetch(url);
