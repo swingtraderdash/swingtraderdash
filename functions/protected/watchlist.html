@@ -197,10 +197,35 @@
   }
 
   const sortedTickers = [...watchlist].sort();
-  const tickerHTML = sortedTickers.map(ticker => `
+  const entries = await Promise.all(sortedTickers.map(async (ticker) => {
+    try {
+      const docRef = doc(db, 'tickers', ticker);
+      const snapshot = await getDoc(docRef);
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        return {
+          symbol: ticker,
+          name: data.name || "Unknown"
+        };
+      } else {
+        return {
+          symbol: ticker,
+          name: "⚠️ Metadata not found"
+        };
+      }
+    } catch (error) {
+      console.warn(`⚠️ Firestore read failed for ${ticker}:`, error.message);
+      return {
+        symbol: ticker,
+        name: "⚠️ Error reading metadata"
+      };
+    }
+  }));
+
+  const tickerHTML = entries.map(entry => `
     <div class="ticker-entry">
-      <strong>${ticker}</strong>
-      <span class="ticker-remove" onclick="confirmDelete('${ticker}')">×</span>
+      <strong>${entry.symbol}</strong> – ${entry.name}
+      <span class="ticker-remove" onclick="confirmDelete('${entry.symbol}')">×</span>
     </div>
   `).join('');
 
@@ -231,6 +256,3 @@ window.confirmDelete = function(ticker) {
 </script>
 </body>
 </html>
-
-
-    
