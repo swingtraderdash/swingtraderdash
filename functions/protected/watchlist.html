@@ -124,6 +124,19 @@
       };
     }
 
+    function showTemporaryMessage(text, duration = 2000) {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="modal">
+          <p>${text}</p>
+        </div>
+      `;
+      modalContainer.style.display = 'block';
+      setTimeout(() => {
+        modalContainer.style.display = 'none';
+      }, duration);
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
       const tickerForm = document.getElementById('ticker-form');
       const tickerInput = document.getElementById('ticker-input');
@@ -223,10 +236,18 @@
         ${tickerHTML}
       `;
     }
+        window.confirmDelete = function(ticker) {
+      showModal(`You're about to remove ${ticker} from your watchlist.\nAre you sure you want to proceed?`, async () => {
+        const currentWatchlist = await getWatchlist();
+        const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
+        const success = await saveWatchlist(updatedWatchlist);
 
-    window.confirmDelete = function(ticker) {
-      showModal(`You're about to remove ${ticker} from your watchlist.\nAre you sure you want to proceed?`, () => {
-        console.log(`✅ Confirmed delete for ${ticker} (not yet wired).`);
+        if (success) {
+          await displayWatchlist();
+          showTemporaryMessage(`✅ ${ticker} successfully deleted from your watchlist`, 2000);
+        } else {
+          showTemporaryMessage(`🚫 Failed to delete ${ticker}. Please try again.`, 3000);
+        }
       }, () => {
         console.log("❌ Delete cancelled.");
       });
@@ -235,5 +256,5 @@
 </body>
 </html>
 
-   
-    
+
+     
