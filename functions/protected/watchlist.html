@@ -221,40 +221,39 @@
           };
         }
       }));
+const tickerHTML = entries.map(entry => `
+  <div class="ticker-entry">
+    <strong>${entry.symbol}</strong> – ${entry.name}
+    <span class="ticker-remove" onclick="confirmDelete('${entry.symbol}')">×</span>
+  </div>
+`).join('');
 
-      const tickerHTML = entries.map(entry => `
-        <div class="ticker-entry">
-          <strong>${entry.symbol}</strong> – ${entry.name}
-          <span class="ticker-remove" onclick="confirmDelete('${entry.symbol}')">×</span>
-        </div>
-      `).join('');
+tickerList.innerHTML = `
+  <div class="ticker-count">
+    <p>Total tickers: ${sortedTickers.length}</p>
+  </div>
+  ${tickerHTML}
+`;
+}
 
-      tickerList.innerHTML = `
-        <div class="ticker-count">
-          <p>Total tickers: ${sortedTickers.length}</p>
-        </div>
-        ${tickerHTML}
-      `;
+window.confirmDelete = function(ticker) {
+  showModal(`You're about to remove ${ticker} from your watchlist.\nAre you sure you want to proceed?`, async () => {
+    const currentWatchlist = await getWatchlist();
+    const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
+    const success = await saveWatchlist(updatedWatchlist);
+
+    if (success) {
+      showTemporaryMessage(`✅ ${ticker} successfully deleted from your watchlist`, 3000);
+      await displayWatchlist();
+    } else {
+      showTemporaryMessage(`🚫 Failed to delete ${ticker}. Please try again.`, 3000);
     }
-        window.confirmDelete = function(ticker) {
-      showModal(`You're about to remove ${ticker} from your watchlist.\nAre you sure you want to proceed?`, async () => {
-        const currentWatchlist = await getWatchlist();
-        const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
-        const success = await saveWatchlist(updatedWatchlist);
-
-        if (success) {
-          await displayWatchlist();
-          showTemporaryMessage(`✅ ${ticker} successfully deleted from your watchlist`, 2000);
-        } else {
-          showTemporaryMessage(`🚫 Failed to delete ${ticker}. Please try again.`, 3000);
-        }
-      }, () => {
-        console.log("❌ Delete cancelled.");
-      });
-    };
-  </script>
+  }, () => {
+    console.log("❌ Delete cancelled.");
+  });
+};
+</script>
 </body>
 </html>
 
-
-     
+      
