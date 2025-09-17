@@ -187,53 +187,29 @@
     });
 
     async function displayWatchlist() {
-      const tickerList = document.getElementById('ticker-list');
-      if (!tickerList) return;
+  const tickerList = document.getElementById('ticker-list');
+  if (!tickerList) return;
 
-      const watchlist = await getWatchlist();
-      if (watchlist.length === 0) {
-        tickerList.innerHTML = '<p>No tickers yet. Add some using the form above.</p>';
-        return;
-      }
+  const watchlist = await getWatchlist();
+  if (watchlist.length === 0) {
+    tickerList.innerHTML = '<p>No tickers yet. Add some using the form above.</p>';
+    return;
+  }
 
-      const sortedTickers = [...watchlist].sort();
-      const entries = await Promise.all(sortedTickers.map(async (ticker) => {
-        try {
-          const docRef = doc(db, 'tickers', ticker);
-          const snapshot = await getDoc(docRef);
-          if (snapshot.exists()) {
-            const data = snapshot.data();
-            return {
-              symbol: data.symbol || ticker,
-              name: data.name || "Unknown"
-            };
-          } else {
-            return {
-              symbol: ticker,
-              name: "⚠️ Metadata not found"
-            };
-          }
-        } catch (error) {
-          console.warn(`⚠️ Firestore read failed for ${ticker}:`, error.message);
-          return {
-            symbol: ticker,
-            name: "⚠️ Error reading metadata"
-          };
-        }
-      }));
-const tickerHTML = entries.map(entry => `
-  <div class="ticker-entry">
-    <strong>${entry.symbol}</strong> – ${entry.name}
-    <span class="ticker-remove" onclick="confirmDelete('${entry.symbol}')">×</span>
-  </div>
-`).join('');
+  const sortedTickers = [...watchlist].sort();
+  const tickerHTML = sortedTickers.map(ticker => `
+    <div class="ticker-entry">
+      <strong>${ticker}</strong>
+      <span class="ticker-remove" onclick="confirmDelete('${ticker}')">×</span>
+    </div>
+  `).join('');
 
-tickerList.innerHTML = `
-  <div class="ticker-count">
-    <p>Total tickers: ${sortedTickers.length}</p>
-  </div>
-  ${tickerHTML}
-`;
+  tickerList.innerHTML = `
+    <div class="ticker-count">
+      <p>Total tickers: ${sortedTickers.length}</p>
+    </div>
+    ${tickerHTML}
+  `;
 }
 
 window.confirmDelete = function(ticker) {
@@ -256,4 +232,5 @@ window.confirmDelete = function(ticker) {
 </body>
 </html>
 
-      
+
+    
