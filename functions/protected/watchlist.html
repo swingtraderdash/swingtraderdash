@@ -215,20 +215,39 @@
     }
 
     window.removeTicker = async function(ticker) {
-      const currentWatchlist = await getWatchlist();
-      const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
-      const success = await saveWatchlist(updatedWatchlist);
+  const currentWatchlist = await getWatchlist();
+  const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
+  const success = await saveWatchlist(updatedWatchlist);
 
-      if (success) {
-        await displayWatchlist();
-      } else {
-        alert('Failed to remove ticker. Please try again.');
-      }
-    };
-  </script>
+  if (success) {
+    await displayWatchlist();
+  } else {
+    alert('Failed to remove ticker. Please try again.');
+  }
+};
+
+// 🔍 TEMP: Sector fetch test to validate Firestore rules
+auth.onAuthStateChanged(async (user) => {
+  if (!user) {
+    console.warn("[SECTOR] fetch:skipped — not authenticated");
+    return;
+  }
+
+  const sectorRef = doc(db, "sectors", "energy"); // Replace "energy" with any known sector key
+  try {
+    const snap = await getDoc(sectorRef);
+    if (snap.exists()) {
+      console.log("[SECTOR] fetch:ok", snap.data());
+    } else {
+      console.warn("[SECTOR] fetch:missing");
+    }
+  } catch (err) {
+    console.error("[SECTOR] fetch:error", err.message);
+  }
+});
+</script>
 </body>
 </html>
-
 
        
       
