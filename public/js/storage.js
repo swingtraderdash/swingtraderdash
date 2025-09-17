@@ -20,7 +20,7 @@ export async function saveWatchlist(tickers) {
     await setDoc(userDoc, { watchlist: tickers }, { merge: true });
     console.log('[storage] ✅ Watchlist saved');
 
-    // Cache metadata for each ticker in sectors collection
+    // Cache metadata for each ticker in tickers collection
     for (const ticker of tickers) {
       console.log(`[storage] 🔍 Checking metadata for ${ticker}`);
 
@@ -28,11 +28,15 @@ export async function saveWatchlist(tickers) {
         const result = await fetchTiingo({ ticker });
         const data = result.data;
 
-        const sectorDoc = doc(db, 'sectors', ticker);
-        await setDoc(sectorDoc, {
+        // Defensive check to avoid undefined writes
+        if (!data || !data.ticker || !data.name) {
+          throw new Error("Missing expected Tiingo fields");
+        }
+
+        const tickerDoc = doc(db, 'tickers', ticker);
+        await setDoc(tickerDoc, {
           symbol: data.ticker,
-          name: data.name || "Unknown",
-          sector: data.sector || "Unknown"
+          name: data.name
         }, { merge: true });
 
         console.log(`[storage] 🧠 Cached metadata for ${ticker}`);
