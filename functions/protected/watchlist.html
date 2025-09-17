@@ -213,7 +213,7 @@
       const tickerHTML = entries.map(entry => `
         <div class="ticker-entry">
           <strong>${entry.symbol}</strong> – ${entry.name}
-          <span class="ticker-remove" onclick="removeTicker('${entry.symbol}')">×</span>
+          <span class="ticker-remove" onclick="confirmDelete('${entry.symbol}')">×</span>
         </div>
       `).join('');
 
@@ -225,17 +225,24 @@
       `;
     }
 
-    window.removeTicker = async function(ticker) {
-      const currentWatchlist = await getWatchlist();
-      const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
-      const success = await saveWatchlist(updatedWatchlist);
+    window.confirmDelete = function(ticker) {
+      showModal(`You're about to remove ${ticker} from your watchlist.\nAre you sure you want to proceed?`, async () => {
+        const currentWatchlist = await getWatchlist();
+        const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
+        const success = await saveWatchlist(updatedWatchlist);
 
-      if (success) {
-        await displayWatchlist();
-      } else {
-        alert('Failed to remove ticker. Please try again.');
-      }
+        if (success) {
+          await displayWatchlist();
+        } else {
+          alert('Failed to remove ticker. Please try again.');
+        }
+      }, () => {
+        console.log("❌ Delete cancelled.");
+      });
     };
-  </script>
-</body>
-</html>
+
+
+ 
+
+          
+   
