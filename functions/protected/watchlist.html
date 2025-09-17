@@ -33,6 +33,20 @@
       color: red;
       cursor: pointer;
     }
+    .modal {
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -30%);
+      background: white;
+      border: 1px solid #ccc;
+      padding: 20px;
+      z-index: 1000;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    .modal button {
+      margin-right: 10px;
+    }
   </style>
   <script type="module" src="/js/firebaseConfig.js" defer></script>
   <script type="module" src="/js/main.js" defer></script>
@@ -75,6 +89,8 @@
     </div>
   </footer>
 
+  <div id="modal-container" style="display:none;"></div>
+
   <script type="module">
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -86,6 +102,27 @@
 
     const auth = getAuth();
     const db = getFirestore(app);
+
+    function showModal(message, onConfirm, onCancel) {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="modal">
+          <p style="white-space: pre-line;">${message}</p>
+          <button id="confirm-btn">Confirm</button>
+          <button id="cancel-btn">Cancel</button>
+        </div>
+      `;
+      modalContainer.style.display = 'block';
+
+      document.getElementById('confirm-btn').onclick = () => {
+        modalContainer.style.display = 'none';
+        onConfirm();
+      };
+      document.getElementById('cancel-btn').onclick = () => {
+        modalContainer.style.display = 'none';
+        if (onCancel) onCancel();
+      };
+    }
 
     document.addEventListener('DOMContentLoaded', async () => {
       const tickerForm = document.getElementById('ticker-form');
@@ -118,26 +155,21 @@
           const alreadyInWatchlist = tickers.filter(t => existingWatchlist.includes(t));
           const newTickers = tickers.filter(t => !existingWatchlist.includes(t));
 
-          if (newTickers.length === 0) {
-            feedback.textContent = '🚫 All tickers are already in your watchlist.';
-            return;
-          }
-
-          const mergedWatchlist = [...new Set([...existingWatchlist, ...newTickers])].sort();
-          const success = await saveWatchlist(mergedWatchlist);
-
-          if (success) {
-            tickerInput.value = '';
-            await displayWatchlist();
-            feedback.style.color = 'green';
-            feedback.textContent = `✅ Added ${newTickers.length} new ticker(s).`;
-            setTimeout(() => {
-              feedback.style.color = 'red';
-              feedback.textContent = '';
-            }, 3000);
+          let message = '';
+          if (alreadyInWatchlist.length > 0 && newTickers.length > 0) {
+            message = `${alreadyInWatchlist.length} ticker(s) already in your watchlist: ${alreadyInWatchlist.join(', ')}.\n${newTickers.length} new ticker(s): ${newTickers.join(', ')}.\nWould you like to proceed with adding the new ones?`;
+          } else if (newTickers.length > 0) {
+            message = `These ${newTickers.length} ticker(s) are not currently in your watchlist: ${newTickers.join(', ')}.\nWould you like to add them?`;
           } else {
-            feedback.textContent = '🚫 Failed to save watchlist. Please try again.';
+            message = `All entered tickers are already in your watchlist: ${alreadyInWatchlist.join(', ')}.`;
           }
+
+          showModal(message, () => {
+            console.log("✅ User confirmed. Ready to proceed with metadata fetch.");
+            // Next step will go here later
+          }, () => {
+            console.log("❌ User cancelled. No changes made.");
+          });
         });
       }
     });
@@ -207,6 +239,3 @@
   </script>
 </body>
 </html>
-
-
-
