@@ -116,7 +116,7 @@
 
       document.getElementById('confirm-btn').onclick = () => {
         modalContainer.style.display = 'none';
-        onConfirm();
+        if (onConfirm) onConfirm();
       };
       document.getElementById('cancel-btn').onclick = () => {
         modalContainer.style.display = 'none';
@@ -166,7 +166,6 @@
 
           showModal(message, () => {
             console.log("✅ User confirmed. Ready to proceed with metadata fetch.");
-            // Next step will go here later
           }, () => {
             console.log("❌ User cancelled. No changes made.");
           });
@@ -226,23 +225,15 @@
     }
 
     window.confirmDelete = function(ticker) {
-      showModal(`You're about to remove ${ticker} from your watchlist.\nAre you sure you want to proceed?`, async () => {
-        const currentWatchlist = await getWatchlist();
-        const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
-        const success = await saveWatchlist(updatedWatchlist);
-
-        if (success) {
-          await displayWatchlist();
-        } else {
-          alert('Failed to remove ticker. Please try again.');
-        }
+      showModal(`You're about to remove ${ticker} from your watchlist.\nAre you sure you want to proceed?`, () => {
+        console.log(`✅ Confirmed delete for ${ticker} (not yet wired).`);
       }, () => {
         console.log("❌ Delete cancelled.");
       });
     };
+  </script>
+</body>
+</html>
 
-
- 
-
-          
    
+    
