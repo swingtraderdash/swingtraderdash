@@ -63,8 +63,8 @@ exports.fetchTiingo = functions.https.onCall(async (data, context) => {
   const ticker = data.ticker;
   const TIINGO_API_KEY = functions.config().tiingo.key;
 
-  if (!ticker) {
-    throw new functions.https.HttpsError("invalid-argument", "Ticker is required.");
+  if (!ticker || typeof ticker !== "string") {
+    throw new functions.https.HttpsError("invalid-argument", "Ticker is required and must be a string.");
   }
 
   const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=${TIINGO_API_KEY}`;
@@ -72,13 +72,22 @@ exports.fetchTiingo = functions.https.onCall(async (data, context) => {
   try {
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Tiingo fetch failed: ${response.status}`);
+      throw new Error(`Tiingo responded with status ${response.status}`);
     }
 
     const json = await response.json();
-    return { success: true, data: json };
+    logger.info(`[Tiingo] Raw response for ${ticker}: ${JSON.stringify(json)}`);
+
+    if (!json.ticker || !json.name) {
+      throw new Error("Missing expected Tiingo fields");
+    }
+
+    return {
+      ticker: json.ticker,
+      name: json.name
+    };
   } catch (err) {
-    console.error("[Tiingo] fetch:error", err.message);
+    logger.error(`[Tiingo] fetch:error for ${ticker}: ${err.message}`);
     throw new functions.https.HttpsError("internal", "Failed to fetch Tiingo data.");
   }
 });
