@@ -78,6 +78,7 @@
   <script type="module">
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
     import { saveWatchlist, getWatchlist } from '/js/storage.js';
     import { injectNav } from "/js/injectNav.js";
     import { app } from "/js/firebaseConfig.js";
@@ -86,6 +87,8 @@
 
     const auth = getAuth();
     const db = getFirestore(app);
+    const functions = getFunctions(app);
+    const fetchTiingo = httpsCallable(functions, "fetchTiingo");
 
     async function fetchTickerMetadata(ticker) {
       try {
@@ -103,18 +106,16 @@
         console.warn(`⚠️ Firestore lookup failed for ${ticker}:`, error.message);
       }
 
-      const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=134b85cc4ea8fe62c59ee2fca25fe5b0033117cf`;
       try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Status ${response.status}`);
-        const data = await response.json();
+        const result = await fetchTiingo({ ticker });
+        const data = result.data;
         return {
-          symbol: data.ticker,
+          symbol: data.ticker || ticker,
           name: data.name || "Unknown",
           sector: data.sector || "Unknown"
         };
       } catch (error) {
-        console.error(`🔥 Metadata fetch failed for ${ticker}:`, error.message);
+        console.error(`🔥 Tiingo fetch failed for ${ticker}:`, error.message);
         return {
           symbol: ticker,
           name: "Unknown",
@@ -215,40 +216,36 @@
     }
 
     window.removeTicker = async function(ticker) {
-  const currentWatchlist = await getWatchlist();
-  const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
-  const success = await saveWatchlist(updatedWatchlist);
+      const currentWatchlist = await getWatchlist();
+      const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
+      const success = await saveWatchlist(updatedWatchlist);
 
-  if (success) {
-    await displayWatchlist();
-  } else {
-    alert('Failed to remove ticker. Please try again.');
-  }
-};
+      if (success) {
+        await displayWatchlist();
+      } else {
+        alert('Failed to remove ticker. Please try again.');
+      }
+    };
 
-// 🔍 TEMP: Sector fetch test to validate Firestore rules
-auth.onAuthStateChanged(async (user) => {
-  if (!user) {
-    console.warn("[SECTOR] fetch:skipped — not authenticated");
-    return;
-  }
+    // 🔍 TEMP: Sector fetch test to validate Firestore rules
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        console.warn("[SECTOR] fetch:skipped — not authenticated");
+        return;
+      }
 
-  const sectorRef = doc(db, "sectors", "energy"); // Replace "energy" with any known sector key
-  try {
-    const snap = await getDoc(sectorRef);
-    if (snap.exists()) {
-      console.log("[SECTOR] fetch:ok", snap.data());
-    } else {
-      console.warn("[SECTOR] fetch:missing");
-    }
-  } catch (err) {
-    console.error("[SECTOR] fetch:error", err.message);
-  }
-});
-</script>
+      const sectorRef = doc(db, "sectors", "energy"); // Replace "energy" with any known sector key
+      try {
+        const snap = await getDoc(sectorRef);
+        if (snap.exists()) {
+          console.log("[SECTOR] fetch:ok", snap.data());
+        } else {
+          console.warn("[SECTOR] fetch:missing");
+        }
+      } catch (err) {
+        console.error("[SECTOR] fetch:error", err.message);
+      }
+    });
+  </script>
 </body>
 </html>
-
-       
-      
-   
