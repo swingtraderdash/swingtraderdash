@@ -1,4 +1,3 @@
-// File: /public/js/main.js
 import {
   getAuth,
   onAuthStateChanged,
@@ -52,12 +51,17 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.style.visibility = "visible";
       // ✅ Inject secure nav bar
       injectNav();
+      // Trigger page-specific rendering
+      if (window.location.pathname.includes("watchlist.html")) {
+        console.log("[auth] User authenticated—triggering watchlist render");
+        window.dispatchEvent(new CustomEvent('authReady'));
+      }
     } else {
       console.log("👤 No user authenticated");
       if (loginBox) loginBox.style.display = "block";
       // Hide page content and redirect for protected pages
       if (window.location.pathname.includes("watchlist.html")) {
-        console.warn("🚫 User not logged in — redirecting to /index.html");
+        console.log("🚫 User not logged in—redirecting to /index.html");
         window.location.href = "/index.html";
       } else {
         document.body.style.visibility = "visible";
@@ -66,6 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }, (error) => {
     console.error("🔥 Auth state error:", error);
     if (window.location.pathname.includes("watchlist.html")) {
+      console.log("🚫 Auth error—redirecting to /index.html");
       window.location.href = "/index.html";
     }
   });
