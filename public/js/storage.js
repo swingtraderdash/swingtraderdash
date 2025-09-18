@@ -8,6 +8,7 @@ const auth = getAuth(app);
 const functions = getFunctions(app);
 const fetchTiingo = httpsCallable(functions, "fetchTiingo");
 
+// Just saves the watchlist array—no API calls!
 export async function saveWatchlist(tickers) {
   try {
     const user = auth.currentUser;
@@ -19,32 +20,6 @@ export async function saveWatchlist(tickers) {
     const userDoc = doc(db, 'users', user.uid);
     await setDoc(userDoc, { watchlist: tickers }, { merge: true });
     console.log('[storage] ✅ Watchlist saved');
-
-    // Cache metadata for each ticker in tickers collection
-    for (const ticker of tickers) {
-      console.log(`[storage] 🔍 Checking metadata for ${ticker}`);
-
-      try {
-        const result = await fetchTiingo({ ticker });
-        const data = result.data;
-
-        // Defensive check to avoid undefined writes
-        if (!data || !data.ticker || !data.name) {
-          throw new Error("Missing expected Tiingo fields");
-        }
-
-        const tickerDoc = doc(db, 'tickers', ticker);
-        await setDoc(tickerDoc, {
-          symbol: data.ticker,
-          name: data.name
-        }, { merge: true });
-
-        console.log(`[storage] 🧠 Cached metadata for ${ticker}`);
-      } catch (error) {
-        console.warn(`[storage] ⚠️ Failed to fetch metadata for ${ticker}:`, error.message);
-      }
-    }
-
     return true;
   } catch (error) {
     console.error('[storage] 🚫 Failed to save watchlist:', error.message);
@@ -52,6 +27,52 @@ export async function saveWatchlist(tickers) {
   }
 }
 
+// NEW: Targeted metadata fetch—only for provided tickers, skips if exists
+export async function fetchMetadataForTickers(tickersToFetch) {
+  if (!tickersToFetch || tickersToFetch.length === 0) {
+    console.log('[storage] ℹ️ No new tickers to fetch metadata for');
+    return true;
+  }
+
+  try {
+    for (const ticker of tickersToFetch) {
+      console.log(`[storage] 🔍 Checking metadata for ${ticker}`);
+
+      // First, check if already exists in Firestore
+      const tickerDocRef = doc(db, 'tickers', ticker);
+      const existingSnap = await getDoc(tickerDocRef);
+      if (existingSnap.exists()) {
+        console.log(`[storage] ✅ Metadata already exists for ${ticker}—skipping API`);
+        continue;  // Skip API if present
+      }
+
+      // Only fetch if missing
+      try {
+        const result = await fetchTiingo({ ticker });
+        const data = result.data;
+
+        if (!data || !data.ticker || !data.name) {
+          throw new Error("Missing expected Tiingo fields");
+        }
+
+        await setDoc(tickerDocRef, {
+          symbol: data.ticker,
+          name: data.name
+        }, { merge: true });
+
+        console.log(`[storage] 🧠 Cached new metadata for ${ticker}`);
+      } catch (error) {
+        console.warn(`[storage] ⚠️ Failed to fetch metadata for ${ticker}:`, error.message);
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error('[storage] 🚫 Failed to fetch metadata:', error.message);
+    return false;
+  }
+}
+
+// Keep getWatchlist unchanged
 export async function getWatchlist() {
   try {
     const user = auth.currentUser;
@@ -66,7 +87,6 @@ export async function getWatchlist() {
       const data = docSnap.data();
       return data.watchlist || [];
     }
-
     return [];
   } catch (error) {
     console.error('[storage] 🚫 Failed to get watchlist:', error.message);
