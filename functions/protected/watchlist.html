@@ -94,7 +94,7 @@
   <script type="module">
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { saveWatchlist, getWatchlist } from '/js/storage.js';
+    import { saveWatchlist, getWatchlist, fetchMetadataForTickers } from '/js/storage.js';
     import { injectNav } from "/js/injectNav.js";
     import { app } from "/js/firebaseConfig.js";
 
@@ -177,82 +177,105 @@
             message = `All entered tickers are already in your watchlist: ${alreadyInWatchlist.join(', ')}.`;
           }
 
-          showModal(message, () => {
-            console.log("✅ User confirmed. Ready to proceed with metadata fetch.");
+          showModal(message, async () => {
+            console.log("✅ User confirmed. Adding new tickers...");
+            if (newTickers.length > 0) {
+              const currentWatchlist = await getWatchlist();
+              const updatedWatchlist = [...currentWatchlist, ...newTickers].sort();
+              
+              // Save full list (no API)
+              const saveSuccess = await saveWatchlist(updatedWatchlist);
+              if (saveSuccess) {
+                // Only fetch for NEW ones (efficient!)
+                const fetchSuccess = await fetchMetadataForTickers(newTickers);
+                if (fetchSuccess) {
+                  showTemporaryMessage(`✅ Added ${newTickers.length} new ticker(s)!`, 3000);
+                } else {
+                  showTemporaryMessage(`✅ Added tickers, but metadata fetch failed for some.`, 3000);
+                }
+                await displayWatchlist();  // Refresh UI
+              } else {
+                showTemporaryMessage('🚫 Failed to add.', 3000);
+              }
+            } else {
+              showTemporaryMessage('No new tickers to add.', 2000);
+            }
           }, () => {
-            console.log("❌ User cancelled. No changes made.");
+            console.log("❌ User cancelled.");
           });
         });
       }
     });
 
     async function displayWatchlist() {
-  const tickerList = document.getElementById('ticker-list');
-  if (!tickerList) return;
+      const tickerList = document.getElementById('ticker-list');
+      if (!tickerList) return;
 
-  const watchlist = await getWatchlist();
-  if (watchlist.length === 0) {
-    tickerList.innerHTML = '<p>No tickers yet. Add some using the form above.</p>';
-    return;
-  }
-
-  const sortedTickers = [...watchlist].sort();
-  const entries = await Promise.all(sortedTickers.map(async (ticker) => {
-    try {
-      const docRef = doc(db, 'tickers', ticker);
-      const snapshot = await getDoc(docRef);
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        return {
-          symbol: ticker,
-          name: data.name || "Unknown"
-        };
-      } else {
-        return {
-          symbol: ticker,
-          name: "⚠️ Metadata not found"
-        };
+      const watchlist = await getWatchlist();
+      if (watchlist.length === 0) {
+        tickerList.innerHTML = '<p>No tickers yet. Add some using the form above.</p>';
+        return;
       }
-    } catch (error) {
-      console.warn(`⚠️ Firestore read failed for ${ticker}:`, error.message);
-      return {
-        symbol: ticker,
-        name: "⚠️ Error reading metadata"
-      };
+
+      const sortedTickers = [...watchlist].sort();
+      // Load cached metadata from localStorage (or fetch only missing)
+      const cached = JSON.parse(localStorage.getItem('tickerMetadata') || '{}');
+      const entries = await Promise.all(sortedTickers.map(async (ticker) => {
+        // Use cache first
+        if (cached[ticker]) {
+          return { symbol: ticker, name: cached[ticker].name || "Unknown" };
+        }
+        // Fallback to Firestore (but this should be rare now)
+        try {
+          const docRef = doc(db, 'tickers', ticker);
+          const snapshot = await getDoc(docRef);
+          const data = snapshot.exists() ? snapshot.data() : {};
+          const entry = { symbol: ticker, name: data.name || "⚠️ Metadata not found" };
+          // Cache it
+          cached[ticker] = entry;
+          localStorage.setItem('tickerMetadata', JSON.stringify(cached));
+          return entry;
+        } catch (error) {
+          console.warn(`⚠️ Firestore read failed for ${ticker}:`, error.message);
+          return { symbol: ticker, name: "⚠️ Error reading metadata" };
+        }
+      }));
+
+      const tickerHTML = entries.map(entry => `
+        <div class="ticker-entry">
+          <strong>${entry.symbol}</strong> – ${entry.name}
+          <span class="ticker-remove" onclick="confirmDelete('${entry.symbol}')">×</span>
+        </div>
+      `).join('');
+
+      tickerList.innerHTML = `
+        <div class="ticker-count">
+          <p>Total tickers: ${sortedTickers.length}</p>
+        </div>
+        ${tickerHTML}
+      `;
     }
-  }));
 
-  const tickerHTML = entries.map(entry => `
-    <div class="ticker-entry">
-      <strong>${entry.symbol}</strong> – ${entry.name}
-      <span class="ticker-remove" onclick="confirmDelete('${entry.symbol}')">×</span>
-    </div>
-  `).join('');
-
-  tickerList.innerHTML = `
-    <div class="ticker-count">
-      <p>Total tickers: ${sortedTickers.length}</p>
-    </div>
-    ${tickerHTML}
-  `;
-}
-
-window.confirmDelete = function(ticker) {
-  showModal(`You're about to remove ${ticker} from your watchlist.\nAre you sure you want to proceed?`, async () => {
-    const currentWatchlist = await getWatchlist();
-    const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
-    const success = await saveWatchlist(updatedWatchlist);
-
-    if (success) {
-      showTemporaryMessage(`✅ ${ticker} successfully deleted from your watchlist`, 3000);
-      await displayWatchlist();
-    } else {
-      showTemporaryMessage(`🚫 Failed to delete ${ticker}. Please try again.`, 3000);
-    }
-  }, () => {
-    console.log("❌ Delete cancelled.");
-  });
-};
-</script>
+    window.confirmDelete = function(ticker) {
+      showModal(`You're about to remove ${ticker} from your watchlist.\nAre you sure you want to proceed?`, async () => {
+        const currentWatchlist = await getWatchlist();
+        const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
+        
+        // Just save—no API calls!
+        const success = await saveWatchlist(updatedWatchlist);
+        
+        if (success) {
+          showTemporaryMessage(`✅ ${ticker} successfully deleted from your watchlist`, 3000);
+          await displayWatchlist();  // Refresh UI (uses existing metadata)
+        } else {
+          showTemporaryMessage(`🚫 Failed to delete ${ticker}. Please try again.`, 3000);
+        }
+      }, () => {
+        console.log("❌ Delete cancelled.");
+      });
+    };
+  </script>
 </body>
 </html>
+     
+           
