@@ -42,36 +42,40 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ✅ Monitor auth state
+  // ✅ Monitor auth state with delay
   onAuthStateChanged(auth, (user) => {
-    if (user) {
-      console.log("👤 Authenticated as:", user.email);
-      if (loginBox) loginBox.style.display = "none";
-      // Show page content for authenticated users
-      document.body.style.visibility = "visible";
-      // ✅ Inject secure nav bar
-      injectNav();
-      // Trigger page-specific rendering
-      if (window.location.pathname.includes("watchlist.html")) {
-        console.log("[auth] User authenticated—triggering watchlist render");
-        window.dispatchEvent(new CustomEvent('authReady'));
-      }
-    } else {
-      console.log("👤 No user authenticated");
-      if (loginBox) loginBox.style.display = "block";
-      // Hide page content and redirect for protected pages
-      if (window.location.pathname.includes("watchlist.html")) {
-        console.log("🚫 User not logged in—redirecting to /index.html");
-        window.location.href = "/index.html";
-      } else {
+    setTimeout(() => {
+      if (user) {
+        console.log("👤 Authenticated as:", user.email);
+        if (loginBox) loginBox.style.display = "none";
+        // Show page content for authenticated users
         document.body.style.visibility = "visible";
+        // ✅ Inject secure nav bar
+        injectNav();
+        // Trigger page-specific rendering
+        if (window.location.pathname.includes("watchlist.html")) {
+          console.log("[auth] User authenticated—triggering watchlist render");
+          window.dispatchEvent(new CustomEvent('authReady'));
+        }
+      } else {
+        console.log("👤 No user authenticated");
+        if (loginBox) loginBox.style.display = "block";
+        // Hide page content and redirect for protected pages
+        if (window.location.pathname.includes("watchlist.html")) {
+          console.log("🚫 User not logged in—redirecting to /index.html");
+          window.location.href = "/index.html";
+        } else {
+          document.body.style.visibility = "visible";
+        }
       }
-    }
+    }, 500); // 500ms delay to ensure auth state resolves
   }, (error) => {
     console.error("🔥 Auth state error:", error);
-    if (window.location.pathname.includes("watchlist.html")) {
-      console.log("🚫 Auth error—redirecting to /index.html");
-      window.location.href = "/index.html";
-    }
+    setTimeout(() => {
+      if (window.location.pathname.includes("watchlist.html")) {
+        console.log("🚫 Auth error—redirecting to /index.html");
+        window.location.href = "/index.html";
+      }
+    }, 500);
   });
 });
