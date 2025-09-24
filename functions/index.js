@@ -4,6 +4,8 @@ const logger = require("firebase-functions/logger");
 const fs = require('fs').promises;
 const path = require('path');
 const fetch = require("node-fetch");
+const { BigQuery } = require('@google-cloud/bigquery');
+const bigquery = new BigQuery();
 
 admin.initializeApp();
 
@@ -89,5 +91,100 @@ exports.fetchTiingo = functions.https.onCall(async (data, context) => {
   } catch (err) {
     logger.error(`[Tiingo] fetch:error for ${ticker}: ${err.message}`);
     throw new functions.https.HttpsError("internal", "Failed to fetch Tiingo data.");
+  }
+});
+
+// Fetch 10 years of historical data and store in BigQuery
+exports.loadHistoricalData = functions.https.onRequest(async (req, res) => {
+  try {
+    // Handle POST request with ticker in body
+    if (req.method !== 'POST') {
+      return res.status(405).send('Method Not Allowed');
+    }
+    const { ticker } = req.body;
+    if (!ticker || typeof ticker !== 'string') {
+      return res.status(400).send('Invalid or missing ticker');
+    }
+
+    const TIINGO_API_KEY = functions.config().tiingo.key;
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setFullYear(startDate.getFullYear() - 10); // 10 years of data
+    const formattedStartDate = startDate.toISOString().split('T')[0];
+    const formattedEndDate = endDate.toISOString().split('T')[0];
+
+    // Check existing dates in BigQuery to avoid duplicates
+    const datasetId = 'swing_trader_data';
+    const tableId = 'ticker_history';
+    const query = `
+      SELECT DISTINCT date
+      FROM \`${datasetId}.${tableId}\`
+      WHERE ticker_symbol = @ticker
+    `;
+    const options = {
+      query: query,
+      params: { ticker: ticker.toUpperCase() },
+    };
+    const [rows] = await bigquery.query(options);
+    const existingDates = rows.map(row => row.date.value.split('T')[0]);
+
+    // Fetch historical data from Tiingo
+    const url = `https://api.tiingo.com/tiingo/daily/${ticker.toLowerCase()}/prices?startDate=${formattedStartDate}&endDate=${formattedEndDate}&token=${TIINGO_API_KEY}`;
+    let response;
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Tiingo responded with status ${response.status}`);
+        }
+        break;
+      } catch (error) {
+        if (error.message.includes('429')) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          retries--;
+        } else {
+          throw error;
+        }
+      }
+    }
+    if (!response) {
+      return res.status(404).send(`No historical data available for ${ticker}`);
+    }
+    const data = await response.json();
+    if (!data || data.length === 0) {
+      return res.status(404).send(`No historical data available for ${ticker}`);
+    }
+
+    // Filter out existing dates
+    const newRows = data
+      .filter(row => !existingDates.includes(row.date.split('T')[0]))
+      .map(row => ({
+        ticker_symbol: ticker.toUpperCase(),
+        date: row.date,
+        open: row.open,
+        high: row.high,
+        low: row.low,
+        close: row.close,
+        volume: row.volume,
+        adjClose: row.adjClose,
+        last_updated: new Date().toISOString(),
+      }));
+
+    // Insert new rows into BigQuery
+    if (newRows.length > 0) {
+      await bigquery
+        .dataset(datasetId)
+        .table(tableId)
+        .insert(newRows);
+      logger.info(`Inserted ${newRows.length} rows for ${ticker}`);
+      return res.status(200).send(`Successfully loaded ${newRows.length} rows for ${ticker}`);
+    } else {
+      logger.info(`No new rows to load for ${ticker}`);
+      return res.status(200).send(`No new rows to load for ${ticker}`);
+    }
+  } catch (error) {
+    logger.error('Error in loadHistoricalData:', error);
+    return res.status(500).send(`Error: ${error.message}`);
   }
 });
