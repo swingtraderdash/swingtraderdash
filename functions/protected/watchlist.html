@@ -129,6 +129,30 @@
       }, duration);
     }
 
+    function showHistoryPopup(newTickers) {
+      showModal(`Successfully loaded ${newTickers.join(', ')} with metadata.\nWould you like to collect historical data for these tickers?`, async () => {
+        try {
+          // Call loadHistoricalData for each ticker with delays
+          for (let i = 0; i < newTickers.length; i++) {
+            const ticker = newTickers[i];
+            await fetch('https://us-central1-swingtraderdash-1a958.cloudfunctions.net/loadHistoricalData', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ticker: ticker })
+            });
+            if (i < newTickers.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 1200)); // 1.2s delay to respect Tiingo's 50/min limit
+            }
+          }
+          showTemporaryMessage(`✅ Historical data requested for ${newTickers.join(', ')}!`, 3000);
+        } catch (error) {
+          showTemporaryMessage(`🚫 Error fetching historical data: ${error.message}`, 3000);
+        }
+      }, () => {
+        console.log("❌ Historical fetch cancelled.");
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
       const tickerForm = document.getElementById('ticker-form');
       const tickerInput = document.getElementById('ticker-input');
@@ -175,19 +199,25 @@
               const currentWatchlist = await getWatchlist();
               const updatedWatchlist = [...currentWatchlist, ...newTickers].sort();
               
-              // Save full list (no API)
               const saveSuccess = await saveWatchlist(updatedWatchlist);
               if (saveSuccess) {
-                // Only fetch for NEW ones (efficient!)
-                const fetchSuccess = await fetchMetadataForTickers(newTickers);
+                // Fetch metadata for new tickers with delays
+                let fetchSuccess = true;
+                for (let i = 0; i < newTickers.length; i++) {
+                  const batch = newTickers.slice(i, i + 1); // One at a time
+                  fetchSuccess = await fetchMetadataForTickers(batch) && fetchSuccess;
+                  if (i < newTickers.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1200)); // 1.2s delay
+                  }
+                }
                 if (fetchSuccess) {
-                  showTemporaryMessage(`✅ Added ${newTickers.length} new ticker(s)!`, 3000);
+                  showHistoryPopup(newTickers); // Show popup for historical after metadata success
                 } else {
                   showTemporaryMessage(`✅ Added tickers, but metadata fetch failed for some.`, 3000);
+                  await displayWatchlist();
                 }
-                await displayWatchlist();  // Refresh UI
               } else {
-                showTemporaryMessage('🚫 Failed to add.', 3000);
+                showTemporaryMessage('🚫 Failed to add tickers.', 3000);
               }
             } else {
               showTemporaryMessage('No new tickers to add.', 2000);
@@ -210,20 +240,16 @@
       }
 
       const sortedTickers = [...watchlist].sort();
-      // Load cached metadata from localStorage (or fetch only missing)
       const cached = JSON.parse(localStorage.getItem('tickerMetadata') || '{}');
       const entries = await Promise.all(sortedTickers.map(async (ticker) => {
-        // Use cache first
         if (cached[ticker]) {
           return { symbol: ticker, name: cached[ticker].name || "Unknown" };
         }
-        // Fallback to Firestore (but this should be rare now)
         try {
           const docRef = doc(db, 'tickers', ticker);
           const snapshot = await getDoc(docRef);
           const data = snapshot.exists() ? snapshot.data() : {};
           const entry = { symbol: ticker, name: data.name || "⚠️ Metadata not found" };
-          // Cache it
           cached[ticker] = entry;
           localStorage.setItem('tickerMetadata', JSON.stringify(cached));
           return entry;
@@ -252,13 +278,10 @@
       showModal(`You're about to remove ${ticker} from your watchlist.\nAre you sure you want to proceed?`, async () => {
         const currentWatchlist = await getWatchlist();
         const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
-        
-        // Just save—no API calls!
         const success = await saveWatchlist(updatedWatchlist);
-        
         if (success) {
           showTemporaryMessage(`✅ ${ticker} successfully deleted from your watchlist`, 3000);
-          await displayWatchlist();  // Refresh UI (uses existing metadata)
+          await displayWatchlist();
         } else {
           showTemporaryMessage(`🚫 Failed to delete ${ticker}. Please try again.`, 3000);
         }
@@ -269,6 +292,3 @@
   </script>
 </body>
 </html>
-
-       
-    
