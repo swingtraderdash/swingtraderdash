@@ -129,30 +129,6 @@
       }, duration);
     }
 
-    function showHistoryPopup(newTickers) {
-      showModal(`Successfully loaded ${newTickers.join(', ')} with metadata.\nWould you like to collect historical data for these tickers?`, async () => {
-        try {
-          // Call loadHistoricalData for each ticker with delays
-          for (let i = 0; i < newTickers.length; i++) {
-            const ticker = newTickers[i];
-            await fetch('https://us-central1-swingtraderdash-1a958.cloudfunctions.net/loadHistoricalData', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ticker: ticker })
-            });
-            if (i < newTickers.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 1200)); // 1.2s delay to respect Tiingo's 50/min limit
-            }
-          }
-          showTemporaryMessage(`✅ Historical data requested for ${newTickers.join(', ')}!`, 3000);
-        } catch (error) {
-          showTemporaryMessage(`🚫 Error fetching historical data: ${error.message}`, 3000);
-        }
-      }, () => {
-        console.log("❌ Historical fetch cancelled.");
-      });
-    }
-
     document.addEventListener('DOMContentLoaded', async () => {
       const tickerForm = document.getElementById('ticker-form');
       const tickerInput = document.getElementById('ticker-input');
@@ -211,17 +187,43 @@
                   }
                 }
                 if (fetchSuccess) {
-                  showHistoryPopup(newTickers); // Show popup for historical after metadata success
+                  showTemporaryMessage(`✅ Successfully loaded ${newTickers.join(', ')} with metadata!`, 3000);
+                  // Show popup for historical data after success
+                  showModal(`Would you like to collect historical data for ${newTickers.join(', ')}?`, async () => {
+                    try {
+                      // Call loadHistoricalData for each new ticker with delays
+                      for (let i = 0; i < newTickers.length; i++) {
+                        const ticker = newTickers[i];
+                        const response = await fetch('https://us-central1-swingtraderdash-1a958.cloudfunctions.net/loadHistoricalData', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ ticker: ticker })
+                        });
+                        if (!response.ok) {
+                          console.error(`Historical load failed for ${ticker}: ${response.status}`);
+                        }
+                        if (i < newTickers.length - 1) {
+                          await new Promise(resolve => setTimeout(resolve, 1200)); // 1.2s delay
+                        }
+                      }
+                      showTemporaryMessage(`✅ Historical data requested for ${newTickers.join(', ')}!`, 3000);
+                    } catch (error) {
+                      showTemporaryMessage(`🚫 Error fetching historical data: ${error.message}`, 3000);
+                    }
+                  }, () => {
+                    console.log("❌ Historical fetch cancelled.");
+                  });
                 } else {
                   showTemporaryMessage(`✅ Added tickers, but metadata fetch failed for some.`, 3000);
-                  await displayWatchlist();
                 }
+                await displayWatchlist(); // Refresh UI after addition
               } else {
                 showTemporaryMessage('🚫 Failed to add tickers.', 3000);
               }
             } else {
               showTemporaryMessage('No new tickers to add.', 2000);
             }
+            tickerInput.value = '';
           }, () => {
             console.log("❌ User cancelled.");
           });
@@ -292,3 +294,5 @@
   </script>
 </body>
 </html>
+      
+     
