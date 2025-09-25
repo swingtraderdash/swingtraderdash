@@ -131,48 +131,49 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 }
 
 // Fetch 10 years of historical data
-exports.loadHistoricalData = functions
-  .runWith({ timeoutSeconds: 300, memory: '1GB' })
-  .https.onRequest(async (req, res) => {
-    try {
-      if (req.method !== 'POST') {
-        return res.status(405).send('Method Not Allowed');
-      }
-      const { ticker } = req.body;
-      if (!ticker || typeof ticker !== 'string') {
-        return res.status(400).send('Invalid or missing ticker');
-      }
+// exports.loadHistoricalData = functions
+//   .runWith({ timeoutSeconds: 300, memory: '1GB' })
+//   .https.onRequest(async (req, res) => {
+//     try {
+//       if (req.method !== 'POST') {
+//         return res.status(405).send('Method Not Allowed');
+//       }
+//       const { ticker } = req.body;
+//       if (!ticker || typeof ticker !== 'string') {
+//         return res.status(400).send('Invalid or missing ticker');
+//       }
 
-      const endDate = new Date().toISOString().split('T')[0];
-      const startDate = new Date();
-      startDate.setFullYear(startDate.getFullYear() - 10);
-      const formattedStartDate = startDate.toISOString().split('T')[0];
+//       const endDate = new Date().toISOString().split('T')[0];
+//       const startDate = new Date();
+//       startDate.setFullYear(startDate.getFullYear() - 10);
+//       const formattedStartDate = startDate.toISOString().split('T')[0];
 
-      const rowsInserted = await loadDataForTicker(ticker, formattedStartDate, endDate);
-      return res.status(200).send(`Successfully inserted ${rowsInserted} rows for ${ticker}`);
-    } catch (error) {
-      logger.error(`Error in loadHistoricalData for ${ticker}: ${error.message}`);
-      return res.status(500).send(`Error: ${error.message}`);
-    }
-  });
+//       const rowsInserted = await loadDataForTicker(ticker, formattedStartDate, endDate);
+//       return res.status(200).send(`Successfully inserted ${rowsInserted} rows for ${ticker}`);
+//     } catch (error) {
+//       logger.error(`Error in loadHistoricalData for ${ticker}: ${error.message}`);
+//       return res.status(500).send(`Error: ${error.message}`);
+//     }
+//   });
 
 // Daily EOD data fetch
-exports.loadDailyEODData = functions
-  .runWith({ timeoutSeconds: 300, memory: '1GB' })
-  .pubsub.schedule('every 24 hours')
-  .timeZone('America/New_York')
-  .onRun(async (context) => {
-    const date = new Date().toISOString().split('T')[0];
-    const tickers = ['GOOG', 'ABBV'];
-    for (const ticker of tickers) {
-      try {
-        await loadDataForTicker(ticker, date, date);
-      } catch (error) {
-        logger.error(`Error in loadDailyEODData for ${ticker}: ${error.message}`);
-      }
-    }
-    logger.info('loadDailyEODData completed for tickers:', tickers);
-    return null;
-  });
+// exports.loadDailyEODData = functions
+//   .runWith({ timeoutSeconds: 300, memory: '1GB' })
+//   .pubsub.schedule('every 24 hours')
+//   .timeZone('America/New_York')
+//   .onRun(async (context) => {
+//     const date = new Date().toISOString().split('T')[0];
+//     const tickers = ['GOOG', 'ABBV'];
+//     for (const ticker of tickers) {
+//       try {
+//         await loadDataForTicker(ticker, date, date);
+//       } catch (error) {
+//         logger.error(`Error in loadDailyEODData for ${ticker}: ${error.message}`);
+//       }
+//     }
+//     logger.info('loadDailyEODData completed for tickers:', tickers);
+//     return null;
+//   });
+
 import { protectedPageGen2 } from './protectedPageGen2.js';
 export { protectedPageGen2 };
