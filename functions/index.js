@@ -1,14 +1,20 @@
+// Importing Firebase Functions and Admin SDK
 import { onRequest, onCall } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+
+// Node.js and external modules
 import { readFile } from 'fs/promises';
 import path from 'path';
 import fetch from 'node-fetch';
 import { BigQuery } from '@google-cloud/bigquery';
-import { protectedPageGen2 } from './protectedPageGen2.js';
-import { testGen2 } from './testGen2.js';
 
+// Importing Gen 2 functions
+import { protectedPageGen2 } from './protectedPageGen2.js';
+import { testGen2 } from './testGen2.js'; // Confirming Gen 2 visibility for deploy
+
+// Initialize BigQuery and Firebase Admin
 const bigquery = new BigQuery();
 initializeApp();
 
@@ -101,15 +107,18 @@ export const fetchTiingo = onCall(async (data, context) => {
 async function loadDataForTicker(ticker, startDate, endDate) {
   const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
   const url = `https://api.tiingo.com/tiingo/daily/${ticker}/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_API_KEY}`;
+
   try {
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Tiingo API error: ${response.status}`);
     }
+
     const data = await response.json();
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error('No data returned from Tiingo');
     }
+
     const rows = data.map(item => ({
       ticker_symbol: ticker,
       date: item.date,
@@ -119,12 +128,15 @@ async function loadDataForTicker(ticker, startDate, endDate) {
       open: item.open,
       volume: item.volume
     }));
+
     const datasetId = 'swing_trader_data';
     const tableId = 'ticker_history';
+
     await bigquery
       .dataset(datasetId)
       .table(tableId)
       .insert(rows);
+
     logger.info(`Inserted ${rows.length} rows for ${ticker} into BigQuery`);
     return rows.length;
   } catch (error) {
@@ -136,3 +148,5 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 // Gen 2 function exports
 export { protectedPageGen2, testGen2 };
 
+
+  
