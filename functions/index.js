@@ -25,7 +25,7 @@ exports.testFunction = functions.https.onRequest((req, res) => {
   res.status(410).send('Function is deprecated');
 });
 
-// Protected page function for watchlist.html, set-new.html, manage.html, triggeredalerts.html
+// Protected page function
 exports.protectedPage = functions.https.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
   res.set('Access-Control-Allow-Methods', 'GET');
@@ -60,7 +60,7 @@ exports.protectedPage = functions.https.onRequest(async (req, res) => {
   }
 });
 
-// Secure backend function to fetch Tiingo metadata
+// Fetch Tiingo metadata
 exports.fetchTiingo = functions.https.onCall(async (data, context) => {
   const ticker = data.ticker;
   const TIINGO_API_KEY = functions.config().tiingo.key;
@@ -94,7 +94,43 @@ exports.fetchTiingo = functions.https.onCall(async (data, context) => {
   }
 });
 
-// Fetch 10 years of historical data and store in BigQuery
+// Helper function to fetch and insert data
+async function loadDataForTicker(ticker, startDate, endDate) {
+  const TIINGO_API_KEY = functions.config().tiingo.key;
+  const url = `https://api.tiingo.com/tiingo/daily/${ticker}/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_API_KEY}`;
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Tiingo API error: ${response.status}`);
+    }
+    const data = await response.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      throw new Error('No data returned from Tiingo');
+    }
+    const rows = data.map(item => ({
+      ticker_symbol: ticker,
+      date: item.date,
+      close: item.close,
+      high: item.high,
+      low: item.low,
+      open: item.open,
+      volume: item.volume
+    }));
+    const datasetId = 'swing_trader_data';
+    const tableId = 'ticker_history';
+    await bigquery
+      .dataset(datasetId)
+      .table(tableId)
+      .insert(rows);
+    logger.info(`Inserted ${rows.length} rows for ${ticker} into BigQuery`);
+    return rows.length;
+  } catch (error) {
+    logger.error(`Error in loadDataForTicker for ${ticker}: ${error.message}`);
+    throw error;
+  }
+}
+
+// Fetch 10 years of historical data
 exports.loadHistoricalData = functions
   .runWith({ timeoutSeconds: 300, memory: '1GB' })
   .https.onRequest(async (req, res) => {
@@ -107,43 +143,13 @@ exports.loadHistoricalData = functions
         return res.status(400).send('Invalid or missing ticker');
       }
 
-      const TIINGO_API_KEY = functions.config().tiingo.key;
-      const endDate = new Date();
+      const endDate = new Date().toISOString().split('T')[0];
       const startDate = new Date();
       startDate.setFullYear(startDate.getFullYear() - 10);
       const formattedStartDate = startDate.toISOString().split('T')[0];
-      const formattedEndDate = endDate.toISOString().split('T')[0];
 
-      const url = `https://api.tiingo.com/tiingo/daily/${ticker}/prices?startDate=${formattedStartDate}&endDate=${formattedEndDate}&token=${TIINGO_API_KEY}`;
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Tiingo API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (!Array.isArray(data) || data.length === 0) {
-        throw new Error('No data returned from Tiingo');
-      }
-
-      const rows = data.map(item => ({
-        ticker_symbol: ticker,
-        date: item.date,
-        close: item.close,
-        high: item.high,
-        low: item.low,
-        open: item.open,
-        volume: item.volume
-      }));
-
-      const datasetId = 'swing_trader_data';
-      const tableId = 'ticker_history';
-      await bigquery
-        .dataset(datasetId)
-        .table(tableId)
-        .insert(rows);
-
-      logger.info(`Inserted ${rows.length} rows for ${ticker} into BigQuery`);
-      return res.status(200).send(`Successfully inserted ${rows.length} rows for ${ticker}`);
+      const rowsInserted = await loadDataForTicker(ticker, formattedStartDate, endDate);
+      return res.status(200).send(`Successfully inserted ${rowsInserted} rows for ${ticker}`);
     } catch (error) {
       logger.error(`Error in loadHistoricalData for ${ticker}: ${error.message}`);
       return res.status(500).send(`Error: ${error.message}`);
@@ -159,33 +165,8 @@ exports.loadDailyEODData = functions
     const date = new Date().toISOString().split('T')[0];
     const tickers = ['GOOG', 'ABBV'];
     for (const ticker of tickers) {
-      const TIINGO_API_KEY = functions.config().tiingo.key;
-      const url = `https://api.tiingo.com/tiingo/daily/${ticker}/prices?startDate=${date}&endDate=${date}&token=${TIINGO_API_KEY}`;
       try {
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`Tiingo API error: ${response.status}`);
-        }
-        const data = await response.json();
-        if (!Array.isArray(data) || data.length === 0) {
-          throw new Error('No data returned from Tiingo');
-        }
-        const rows = data.map(item => ({
-          ticker_symbol: ticker,
-          date: item.date,
-          close: item.close,
-          high: item.high,
-          low: item.low,
-          open: item.open,
-          volume: item.volume
-        }));
-        const datasetId = 'swing_trader_data';
-        const tableId = 'ticker_history';
-        await bigquery
-          .dataset(datasetId)
-          .table(tableId)
-          .insert(rows);
-        logger.info(`Inserted ${rows.length} rows for ${ticker} into BigQuery`);
+        await loadDataForTicker(ticker, date, date);
       } catch (error) {
         logger.error(`Error in loadDailyEODData for ${ticker}: ${error.message}`);
       }
