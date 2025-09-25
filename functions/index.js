@@ -18,11 +18,11 @@ import { testGen2 } from './testGen2.js'; // Confirming Gen 2 visibility for dep
 const bigquery = new BigQuery();
 initializeApp();
 
-// Clean up orphaned functions
-export const pageGatekeeper = onRequest((req, res) => {
-  logger.info('pageGatekeeper is deprecated and will be deleted');
-  res.status(410).send('Function is deprecated');
-});
+// Clean up orphaned functions (temporarily disabled for Gen 2 testing)
+// export const pageGatekeeper = onRequest((req, res) => {
+//   logger.info('pageGatekeeper is deprecated and will be deleted');
+//   res.status(410).send('Function is deprecated');
+// });
 
 export const sessionLogin = onRequest((req, res) => {
   logger.info('sessionLogin is deprecated and will be deleted');
@@ -147,3 +147,4 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
 // Gen 2 function exports
 export { protectedPageGen2, testGen2 };
+
