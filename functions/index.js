@@ -7,6 +7,7 @@ import path from 'path';
 import fetch from 'node-fetch';
 import { BigQuery } from '@google-cloud/bigquery';
 import { protectedPageGen2 } from './protectedPageGen2.js';
+import { testGen2 } from './testGen2.js';
 
 const bigquery = new BigQuery();
 initializeApp();
@@ -132,5 +133,6 @@ async function loadDataForTicker(ticker, startDate, endDate) {
   }
 }
 
-// Gen 2 function export
-export { protectedPageGen2 };
+// Gen 2 function exports
+export { protectedPageGen2, testGen2 };
+
