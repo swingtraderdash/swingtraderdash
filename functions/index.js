@@ -1,32 +1,34 @@
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-const logger = require("firebase-functions/logger");
-const fs = require('fs').promises;
-const path = require('path');
-const fetch = require("node-fetch");
-const { BigQuery } = require('@google-cloud/bigquery');
-const bigquery = new BigQuery();
+import { onRequest, onCall } from 'firebase-functions/v2/https';
+import { logger } from 'firebase-functions';
+import { initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { readFile } from 'fs/promises';
+import path from 'path';
+import fetch from 'node-fetch';
+import { BigQuery } from '@google-cloud/bigquery';
+import { protectedPageGen2 } from './protectedPageGen2.js';
 
-admin.initializeApp();
+const bigquery = new BigQuery();
+initializeApp();
 
 // Clean up orphaned functions
-exports.pageGatekeeper = functions.https.onRequest((req, res) => {
+export const pageGatekeeper = onRequest((req, res) => {
   logger.info('pageGatekeeper is deprecated and will be deleted');
   res.status(410).send('Function is deprecated');
 });
 
-exports.sessionLogin = functions.https.onRequest((req, res) => {
+export const sessionLogin = onRequest((req, res) => {
   logger.info('sessionLogin is deprecated and will be deleted');
   res.status(410).send('Function is deprecated');
 });
 
-exports.testFunction = functions.https.onRequest((req, res) => {
+export const testFunction = onRequest((req, res) => {
   logger.info('testFunction is deprecated and will be deleted');
   res.status(410).send('Function is deprecated');
 });
 
-// Protected page function
-exports.protectedPage = functions.https.onRequest(async (req, res) => {
+// Protected page function (Gen 1)
+export const protectedPage = onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
   res.set('Access-Control-Allow-Methods', 'GET');
   res.set('Access-Control-Allow-Headers', 'Authorization');
@@ -40,14 +42,14 @@ exports.protectedPage = functions.https.onRequest(async (req, res) => {
   const idToken = authHeader.split('Bearer ')[1];
 
   try {
-    await admin.auth().verifyIdToken(idToken);
+    await getAuth().verifyIdToken(idToken);
     logger.info('Token verified, serving protected page for:', req.path);
 
     const filePath = path.join(__dirname, 'protected', req.path.replace(/^\//, ''));
     logger.info('Attempting to serve file:', filePath);
 
     try {
-      const fileContent = await fs.readFile(filePath, 'utf8');
+      const fileContent = await readFile(filePath, 'utf8');
       logger.info('Serving file content for:', req.path, 'Content preview:', fileContent.substring(0, 100) + '...');
       res.status(200).set('Content-Type', 'text/html').send(fileContent);
     } catch (error) {
@@ -61,12 +63,12 @@ exports.protectedPage = functions.https.onRequest(async (req, res) => {
 });
 
 // Fetch Tiingo metadata
-exports.fetchTiingo = functions.https.onCall(async (data, context) => {
+export const fetchTiingo = onCall(async (data, context) => {
   const ticker = data.ticker;
-  const TIINGO_API_KEY = functions.config().tiingo.key;
+  const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
 
   if (!ticker || typeof ticker !== "string") {
-    throw new functions.https.HttpsError("invalid-argument", "Ticker is required and must be a string.");
+    throw new Error("Ticker is required and must be a string.");
   }
 
   const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=${TIINGO_API_KEY}`;
@@ -90,13 +92,13 @@ exports.fetchTiingo = functions.https.onCall(async (data, context) => {
     };
   } catch (err) {
     logger.error(`[Tiingo] fetch:error for ${ticker}: ${err.message}`);
-    throw new functions.https.HttpsError("internal", "Failed to fetch Tiingo data.");
+    throw new Error("Failed to fetch Tiingo data.");
   }
 });
 
 // Helper function to fetch and insert data
 async function loadDataForTicker(ticker, startDate, endDate) {
-  const TIINGO_API_KEY = functions.config().tiingo.key;
+  const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
   const url = `https://api.tiingo.com/tiingo/daily/${ticker}/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_API_KEY}`;
   try {
     const response = await fetch(url);
@@ -130,50 +132,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
   }
 }
 
-// Fetch 10 years of historical data
-// exports.loadHistoricalData = functions
-//   .runWith({ timeoutSeconds: 300, memory: '1GB' })
-//   .https.onRequest(async (req, res) => {
-//     try {
-//       if (req.method !== 'POST') {
-//         return res.status(405).send('Method Not Allowed');
-//       }
-//       const { ticker } = req.body;
-//       if (!ticker || typeof ticker !== 'string') {
-//         return res.status(400).send('Invalid or missing ticker');
-//       }
-
-//       const endDate = new Date().toISOString().split('T')[0];
-//       const startDate = new Date();
-//       startDate.setFullYear(startDate.getFullYear() - 10);
-//       const formattedStartDate = startDate.toISOString().split('T')[0];
-
-//       const rowsInserted = await loadDataForTicker(ticker, formattedStartDate, endDate);
-//       return res.status(200).send(`Successfully inserted ${rowsInserted} rows for ${ticker}`);
-//     } catch (error) {
-//       logger.error(`Error in loadHistoricalData for ${ticker}: ${error.message}`);
-//       return res.status(500).send(`Error: ${error.message}`);
-//     }
-//   });
-
-// Daily EOD data fetch
-// exports.loadDailyEODData = functions
-//   .runWith({ timeoutSeconds: 300, memory: '1GB' })
-//   .pubsub.schedule('every 24 hours')
-//   .timeZone('America/New_York')
-//   .onRun(async (context) => {
-//     const date = new Date().toISOString().split('T')[0];
-//     const tickers = ['GOOG', 'ABBV'];
-//     for (const ticker of tickers) {
-//       try {
-//         await loadDataForTicker(ticker, date, date);
-//       } catch (error) {
-//         logger.error(`Error in loadDailyEODData for ${ticker}: ${error.message}`);
-//       }
-//     }
-//     logger.info('loadDailyEODData completed for tickers:', tickers);
-//     return null;
-//   });
-
-import { protectedPageGen2 } from './protectedPageGen2.js';
+// Gen 2 function export
 export { protectedPageGen2 };
+
+   
