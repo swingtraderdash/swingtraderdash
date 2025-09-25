@@ -174,3 +174,5 @@ exports.loadDailyEODData = functions
     logger.info('loadDailyEODData completed for tickers:', tickers);
     return null;
   });
+import { protectedPageGen2 } from './protectedPageGen2.js';
+export { protectedPageGen2 };
