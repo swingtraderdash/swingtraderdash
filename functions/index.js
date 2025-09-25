@@ -34,40 +34,40 @@ export const testFunction = onRequest((req, res) => {
   res.status(410).send('Function is deprecated');
 });
 
-// Protected page function (Gen 1)
-export const protectedPage = onRequest(async (req, res) => {
-  res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
-  res.set('Access-Control-Allow-Methods', 'GET');
-  res.set('Access-Control-Allow-Headers', 'Authorization');
+// Protected page function (temporarily disabled for Gen 2 testing)
+// export const protectedPage = onRequest(async (req, res) => {
+//   res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
+//   res.set('Access-Control-Allow-Methods', 'GET');
+//   res.set('Access-Control-Allow-Headers', 'Authorization');
 
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    logger.info('No token provided, redirecting to /index.html');
-    return res.redirect(302, '/index.html');
-  }
+//   const authHeader = req.headers.authorization;
+//   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+//     logger.info('No token provided, redirecting to /index.html');
+//     return res.redirect(302, '/index.html');
+//   }
 
-  const idToken = authHeader.split('Bearer ')[1];
+//   const idToken = authHeader.split('Bearer ')[1];
 
-  try {
-    await getAuth().verifyIdToken(idToken);
-    logger.info('Token verified, serving protected page for:', req.path);
+//   try {
+//     await getAuth().verifyIdToken(idToken);
+//     logger.info('Token verified, serving protected page for:', req.path);
 
-    const filePath = path.join(__dirname, 'protected', req.path.replace(/^\//, ''));
-    logger.info('Attempting to serve file:', filePath);
+//     const filePath = path.join(__dirname, 'protected', req.path.replace(/^\//, ''));
+//     logger.info('Attempting to serve file:', filePath);
 
-    try {
-      const fileContent = await readFile(filePath, 'utf8');
-      logger.info('Serving file content for:', req.path, 'Content preview:', fileContent.substring(0, 100) + '...');
-      res.status(200).set('Content-Type', 'text/html').send(fileContent);
-    } catch (error) {
-      logger.error('File read error for:', filePath, 'Error:', error.message);
-      res.status(404).send('File not found');
-    }
-  } catch (error) {
-    logger.error('Token verification failed:', error);
-    res.redirect(302, '/index.html');
-  }
-});
+//     try {
+//       const fileContent = await readFile(filePath, 'utf8');
+//       logger.info('Serving file content for:', req.path, 'Content preview:', fileContent.substring(0, 100) + '...');
+//       res.status(200).set('Content-Type', 'text/html').send(fileContent);
+//     } catch (error) {
+//       logger.error('File read error for:', filePath, 'Error:', error.message);
+//       res.status(404).send('File not found');
+//     }
+//   } catch (error) {
+//     logger.error('Token verification failed:', error);
+//     res.redirect(302, '/index.html');
+//   }
+// });
 
 // Fetch Tiingo metadata (temporarily disabled for Gen 2 testing)
 // export const fetchTiingo = onCall(async (data, context) => {
@@ -147,4 +147,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
 // Gen 2 function exports
 export { protectedPageGen2, testGen2 };
+
+    
+
 
