@@ -69,39 +69,39 @@ export const protectedPage = onRequest(async (req, res) => {
   }
 });
 
-// Fetch Tiingo metadata
-export const fetchTiingo = onCall(async (data, context) => {
-  const ticker = data.ticker;
-  const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
+// Fetch Tiingo metadata (temporarily disabled for Gen 2 testing)
+// export const fetchTiingo = onCall(async (data, context) => {
+//   const ticker = data.ticker;
+//   const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
 
-  if (!ticker || typeof ticker !== "string") {
-    throw new Error("Ticker is required and must be a string.");
-  }
+//   if (!ticker || typeof ticker !== "string") {
+//     throw new Error("Ticker is required and must be a string.");
+//   }
 
-  const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=${TIINGO_API_KEY}`;
+//   const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=${TIINGO_API_KEY}`;
 
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Tiingo responded with status ${response.status}`);
-    }
+//   try {
+//     const response = await fetch(url);
+//     if (!response.ok) {
+//       throw new Error(`Tiingo responded with status ${response.status}`);
+//     }
 
-    const json = await response.json();
-    logger.info(`[Tiingo] Raw response for ${ticker}: ${JSON.stringify(json)}`);
+//     const json = await response.json();
+//     logger.info(`[Tiingo] Raw response for ${ticker}: ${JSON.stringify(json)}`);
 
-    if (!json.ticker || !json.name) {
-      throw new Error("Missing expected Tiingo fields");
-    }
+//     if (!json.ticker || !json.name) {
+//       throw new Error("Missing expected Tiingo fields");
+//     }
 
-    return {
-      ticker: json.ticker,
-      name: json.name
-    };
-  } catch (err) {
-    logger.error(`[Tiingo] fetch:error for ${ticker}: ${err.message}`);
-    throw new Error("Failed to fetch Tiingo data.");
-  }
-});
+//     return {
+//       ticker: json.ticker,
+//       name: json.name
+//     };
+//   } catch (err) {
+//     logger.error(`[Tiingo] fetch:error for ${ticker}: ${err.message}`);
+//     throw new Error("Failed to fetch Tiingo data.");
+//   }
+// });
 
 // Helper function to fetch and insert data
 async function loadDataForTicker(ticker, startDate, endDate) {
@@ -147,6 +147,3 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
 // Gen 2 function exports
 export { protectedPageGen2, testGen2 };
-
-
-  
