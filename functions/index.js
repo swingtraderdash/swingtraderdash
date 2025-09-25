@@ -134,5 +134,3 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
 // Gen 2 function export
 export { protectedPageGen2 };
-
-   
