@@ -1,10 +1,8 @@
+// Gen 2 protected page function with Firebase Auth and file serving
 import { onRequest } from 'firebase-functions/v2/https';
-import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { readFile } from 'fs/promises';
 import path from 'path';
-
-initializeApp();
 
 export const protectedPageGen2 = onRequest({ region: 'us-central1' }, async (req, res) => {
   res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
