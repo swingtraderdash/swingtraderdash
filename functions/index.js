@@ -24,15 +24,15 @@ initializeApp();
 //   res.status(410).send('Function is deprecated');
 // });
 
-export const sessionLogin = onRequest((req, res) => {
-  logger.info('sessionLogin is deprecated and will be deleted');
-  res.status(410).send('Function is deprecated');
-});
+// export const sessionLogin = onRequest((req, res) => {
+//   logger.info('sessionLogin is deprecated and will be deleted');
+//   res.status(410).send('Function is deprecated');
+// });
 
-export const testFunction = onRequest((req, res) => {
-  logger.info('testFunction is deprecated and will be deleted');
-  res.status(410).send('Function is deprecated');
-});
+// export const testFunction = onRequest((req, res) => {
+//   logger.info('testFunction is deprecated and will be deleted');
+//   res.status(410).send('Function is deprecated');
+// });
 
 // Protected page function (temporarily disabled for Gen 2 testing)
 // export const protectedPage = onRequest(async (req, res) => {
@@ -147,6 +147,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
 // Gen 2 function exports
 export { protectedPageGen2, testGen2 };
+
 
     
 
