@@ -10,6 +10,7 @@ import { readFile } from 'fs/promises';
 import path from 'path';
 import fetch from 'node-fetch';
 import { BigQuery } from '@google-cloud/bigquery';
+import { fileURLToPath } from 'url';
 
 // Initialize BigQuery and Firebase Admin
 const bigquery = new BigQuery();
@@ -80,7 +81,7 @@ export const protectedPage = onRequest(
       await getAuth().verifyIdToken(idToken);
       logger.info('Token verified, serving protected page for:', req.path);
 
-      const filePath = path.join(__dirname, 'protected', req.path.replace(/^\//, ''));
+      const filePath = new URL('protected/' + req.path.replace(/^\//, ''), import.meta.url).pathname;
       logger.info('Attempting to serve file:', filePath);
 
       logger.info('File exists:', require('fs').existsSync(filePath), 'Path:', filePath);
