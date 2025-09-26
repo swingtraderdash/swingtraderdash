@@ -65,6 +65,9 @@ export const protectedPage = onRequest(
     res.set('Access-Control-Allow-Methods', 'GET');
     res.set('Access-Control-Allow-Headers', 'Authorization');
 
+    // Log the Authorization header
+    logger.info('Authorization header:', req.headers.authorization || 'None');
+
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       logger.info('No token provided, redirecting to /index.html');
@@ -80,7 +83,6 @@ export const protectedPage = onRequest(
       const filePath = path.join(__dirname, 'protected', req.path.replace(/^\//, ''));
       logger.info('Attempting to serve file:', filePath);
 
-      // Log whether the file exists
       logger.info('File exists:', require('fs').existsSync(filePath), 'Path:', filePath);
 
       try {
