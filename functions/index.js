@@ -7,6 +7,7 @@ import { getAuth } from 'firebase-admin/auth';
 
 // Node.js and external modules
 import { readFile } from 'fs/promises';
+import fs from 'fs';
 import path from 'path';
 import fetch from 'node-fetch';
 import { BigQuery } from '@google-cloud/bigquery';
@@ -84,7 +85,7 @@ export const protectedPage = onRequest(
       const filePath = new URL('protected/' + req.path.replace(/^\//, ''), import.meta.url).pathname;
       logger.info('Attempting to serve file:', filePath);
 
-      logger.info('File exists:', require('fs').existsSync(filePath), 'Path:', filePath);
+      logger.info('File exists:', fs.existsSync(filePath), 'Path:', filePath);
 
       try {
         const fileContent = await readFile(filePath, 'utf8');
@@ -218,3 +219,4 @@ export const loadHistoricalData = onRequest(
     }
   }
 );
+    
