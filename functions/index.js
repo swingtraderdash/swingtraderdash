@@ -1,17 +1,13 @@
-// Importing Firebase Functions and Admin SDK
+// Firebase Functions and Admin SDK
 import { onRequest, onCall } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-
-// Node.js and external modules
 import { readFile } from 'fs/promises';
-import fs from 'fs';
-import path from 'path';
 import fetch from 'node-fetch';
 import { BigQuery } from '@google-cloud/bigquery';
-import { fileURLToPath } from 'url';
+import path from 'path';
 
 // Initialize BigQuery and Firebase Admin
 const bigquery = new BigQuery();
@@ -58,74 +54,6 @@ async function loadDataForTicker(ticker, startDate, endDate) {
     throw error;
   }
 }
-
-// Protected page function
-export const protectedPage = onRequest(
-  { region: 'us-central1' },
-  async (req, res) => {
-    res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
-    res.set('Access-Control-Allow-Methods', 'GET');
-    res.set('Access-Control-Allow-Headers', 'Authorization');
-
-    // Log the Authorization header
-    logger.info('Authorization header:', req.headers.authorization || 'None');
-
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      logger.info('No token provided, redirecting to /index.html');
-      return res.redirect(302, '/index.html');
-    }
-
-    const idToken = authHeader.split('Bearer ')[1];
-
-    try {
-      await getAuth().verifyIdToken(idToken);
-      logger.info('Token verified, serving protected page for:', req.path);
-
-      const filePath = new URL('protected/' + req.path.replace(/^\//, ''), import.meta.url).pathname;
-      logger.info('Attempting to serve file:', filePath);
-
-      try {
-        const fileContent = await readFile(filePath, 'utf8');
-        logger.info('Serving file content for:', req.path, 'Content preview:', fileContent.substring(0, 100) + '...');
-        res.status(200).set('Content-Type', 'text/html').send(fileContent);
-      } catch (error) {
-        logger.error('File read error for:', filePath, 'Error:', error.message);
-        res.status(404).send('File not found');
-      }
-    } catch (error) {
-      logger.error('Token verification failed:', error);
-      res.redirect(302, '/index.html');
-    }
-  }
-);
-
-// Session login function
-export const sessionLogin = onRequest(
-  { region: 'us-central1' },
-  async (req, res) => {
-    logger.info('sessionLogin is deprecated and will be deleted');
-    res.status(410).send('Function is deprecated');
-  }
-);
-
-// Test function
-export const testFunction = onRequest(
-  { region: 'us-central1' },
-  async (req, res) => {
-    logger.info('testFunction is deprecated and will be deleted');
-    res.status(410).send('Function is deprecated');
-  }
-);
-
-// Page gatekeeper function
-export const pageGatekeeper = onRequest(
-  { region: 'us-central1' },
-  async (req, res) => {
-    logger.info('pageGatekeeper is deprecated and will be deleted');
-    res.status(410).send('Function is deprecated');
-  }
-);
 
 // Fetch Tiingo metadata
 export const fetchTiingo = onCall(
@@ -218,6 +146,28 @@ export const loadHistoricalData = onRequest(
   }
 );
 
-    
-    
-    
+// Protected page function
+export const protectedPage = onRequest(
+  { region: 'us-central1' },
+  async (req, res) => {
+    res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
+    res.set('Access-Control-Allow-Methods', 'GET');
+    res.set('Access-Control-Allow-Headers', 'Authorization');
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.redirect(302, '/index.html');
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+
+    try {
+      await getAuth().verifyIdToken(idToken);
+      const filePath = path.join(__dirname, 'protected', req.path.replace(/^\//, ''));
+      const fileContent = await readFile(filePath, 'utf8');
+      res.status(200).set('Content-Type', 'text/html').send(fileContent);
+    } catch (error) {
+      res.redirect(302, '/index.html');
+    }
+  }
+);
