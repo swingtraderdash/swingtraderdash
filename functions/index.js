@@ -85,8 +85,6 @@ export const protectedPage = onRequest(
       const filePath = new URL('protected/' + req.path.replace(/^\//, ''), import.meta.url).pathname;
       logger.info('Attempting to serve file:', filePath);
 
-      logger.info('File exists:', fs.existsSync(filePath), 'Path:', filePath);
-
       try {
         const fileContent = await readFile(filePath, 'utf8');
         logger.info('Serving file content for:', req.path, 'Content preview:', fileContent.substring(0, 100) + '...');
@@ -219,4 +217,7 @@ export const loadHistoricalData = onRequest(
     }
   }
 );
+
+    
+    
     
