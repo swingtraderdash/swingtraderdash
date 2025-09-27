@@ -82,8 +82,7 @@
   </footer>
 
   <div id="modal-container" style="display:none;"></div>
-
-  <script type="module">
+    <script type="module">
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { saveWatchlist, getWatchlist, fetchMetadataForTickers } from '/js/storage.js';
@@ -143,11 +142,6 @@
           feedback.textContent = '';
 
           const inputValue = tickerInput.value.trim();
-          if (!inputValue) {
-            feedback.textContent = '🚫 Please enter at least one ticker.';
-            return;
-          }
-
           const validTickerRegex = /^[A-Za-z.]+$/;
           const tickers = inputValue.split(',').map(t => t.trim().toUpperCase()).filter(Boolean);
           const invalid = tickers.filter(t => !validTickerRegex.test(t));
@@ -174,10 +168,8 @@
             if (newTickers.length > 0) {
               const currentWatchlist = await getWatchlist();
               const updatedWatchlist = [...currentWatchlist, ...newTickers].sort();
-              
               const saveSuccess = await saveWatchlist(updatedWatchlist);
               if (saveSuccess) {
-                // Fetch metadata for new tickers with delays
                 let fetchSuccess = true;
                 for (let i = 0; i < newTickers.length; i++) {
                   const batch = newTickers.slice(i, i + 1);
@@ -187,7 +179,6 @@
                   }
                 }
                 if (fetchSuccess) {
-                  // Show historical popup immediately after metadata
                   showModal(`Would you like to collect historical data for ${newTickers.join(', ')}?`, async () => {
                     try {
                       for (let i = 0; i < newTickers.length; i++) {
@@ -214,7 +205,7 @@
                 } else {
                   showTemporaryMessage(`✅ Added tickers, but metadata fetch failed for some.`, 3000);
                 }
-                await displayWatchlist(); // Refresh UI
+                await displayWatchlist();
               } else {
                 showTemporaryMessage('🚫 Failed to add tickers.', 3000);
               }
@@ -230,11 +221,14 @@
     });
 
     async function displayWatchlist() {
+      console.log("📋 displayWatchlist() fired"); // Microstep 1
       const tickerList = document.getElementById('ticker-list');
       if (!tickerList) return;
 
       const watchlist = await getWatchlist();
-      if (watchlist.length === 0) {
+      console.log("📋 Watchlist loaded:", watchlist); // Microstep 2
+
+      if (!watchlist || watchlist.length === 0) {
         tickerList.innerHTML = '<p>No tickers yet. Add some using the form above.</p>';
         return;
       }
@@ -292,8 +286,3 @@
   </script>
 </body>
 </html>
-    
-     
-           
-          
-          
