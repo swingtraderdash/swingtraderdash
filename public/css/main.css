@@ -65,7 +65,7 @@ nav a.active {
 .dropdown-content {
   position: absolute;
   top: 100%;
-  left: -2em; /* 👈 Shift dropdown to the left */
+  left: -2em;
   display: none;
   flex-direction: column;
   z-index: 10;
@@ -131,6 +131,14 @@ form button {
 }
 
 /* ─── Watchlist Layout ─── */
+#ticker-count {
+  text-align: center;
+  font-weight: bold;
+  margin: 1em 0;
+  font-size: 1.1em;
+  color: #444;
+}
+
 #ticker-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
