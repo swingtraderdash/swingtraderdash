@@ -146,7 +146,7 @@ export const loadHistoricalData = onRequest(
   }
 );
 
-// Protected page function
+// Protected page function with logging
 export const protectedPage = onRequest(
   { region: 'us-central1' },
   async (req, res) => {
@@ -154,19 +154,29 @@ export const protectedPage = onRequest(
     res.set('Access-Control-Allow-Methods', 'GET');
     res.set('Access-Control-Allow-Headers', 'Authorization');
 
+    logger.info("🔐 protectedPage triggered");
+
     const authHeader = req.headers.authorization;
+    logger.info("📡 Authorization header:", authHeader);
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      logger.warn("🚫 Missing or malformed Authorization header");
       return res.redirect(302, '/index.html');
     }
 
     const idToken = authHeader.split('Bearer ')[1];
 
     try {
-      await getAuth().verifyIdToken(idToken);
+      const decoded = await getAuth().verifyIdToken(idToken);
+      logger.info("✅ Token verified for UID:", decoded.uid);
+
       const filePath = path.join(__dirname, 'protected', req.path.replace(/^\//, ''));
+      logger.info("📄 Serving file:", filePath);
+
       const fileContent = await readFile(filePath, 'utf8');
       res.status(200).set('Content-Type', 'text/html').send(fileContent);
     } catch (error) {
+      logger.error("🚫 Token verification failed:", error.message);
       res.redirect(302, '/index.html');
     }
   }
