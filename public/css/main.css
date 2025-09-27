@@ -145,6 +145,11 @@ ul#ticker-list {
   gap: 16px;
   padding: 0;
   list-style: none;
+  justify-items: stretch;
+}
+
+ul#ticker-list li {
+  margin: 0;
 }
 
 .ticker-entry {
@@ -155,9 +160,11 @@ ul#ticker-list {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   font-weight: 500;
   transition: transform 0.2s ease;
+  text-align: left;
 }
 
 .ticker-entry:hover {
   transform: scale(1.02);
   background-color: #eef;
 }
+
