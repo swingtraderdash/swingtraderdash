@@ -8,6 +8,11 @@ import { readFile } from 'fs/promises';
 import fetch from 'node-fetch';
 import { BigQuery } from '@google-cloud/bigquery';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Initialize BigQuery and Firebase Admin
 const bigquery = new BigQuery();
