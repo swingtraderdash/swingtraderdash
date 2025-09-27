@@ -129,3 +129,27 @@ form button {
   padding: 0.5em;
   width: 200px;
 }
+
+/* ─── Watchlist Layout ─── */
+#ticker-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.ticker-entry {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-weight: 500;
+  transition: transform 0.2s ease;
+}
+
+.ticker-entry:hover {
+  transform: scale(1.02);
+  background-color: #eef;
+}
