@@ -152,17 +152,17 @@ form button {
 }
 
 .ticker-entry {
-  background-color: #f9f9f9;
+  background-color: #e6f2ff;
   border: 1px solid #ddd;
   border-radius: 8px;
   padding: 12px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   font-weight: 500;
   transition: transform 0.2s ease;
-  text-align: left;
+  text-align: centre;
 }
 
 .ticker-entry:hover {
   transform: scale(1.02);
-  background-color: #eef;
+  background-color: #d0e7ff;
 }
