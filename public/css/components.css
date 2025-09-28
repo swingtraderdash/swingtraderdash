@@ -23,6 +23,13 @@ nav a img {
   box-shadow: none;
 }
 
+nav a:focus img,
+nav a:hover img {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
 nav a:hover {
   color: #00bfff; /* Bright blue hover */
 }
@@ -169,5 +176,3 @@ footer {
   box-sizing: border-box;
   font-family: Arial, sans-serif;
 }
-
-   
