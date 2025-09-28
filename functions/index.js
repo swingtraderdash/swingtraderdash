@@ -67,6 +67,8 @@ export const fetchTiingo = onCall(
     const ticker = request.data.ticker;
     const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
 
+    logger.info(`[Tiingo] Runtime key: ${TIINGO_API_KEY ? '✅ Present' : '❌ Missing'}`);
+
     if (!ticker || typeof ticker !== 'string') {
       throw new Error('Ticker is required and must be a string.');
     }
@@ -186,3 +188,6 @@ export const protectedPage = onRequest(
     }
   }
 );
+
+
+    
