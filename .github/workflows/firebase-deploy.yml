@@ -26,8 +26,10 @@ jobs:
         working-directory: functions
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
 
       - name: Deploy Hosting
         run: firebase deploy --only hosting --project swingtraderdash-1a958
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
