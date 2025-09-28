@@ -16,6 +16,13 @@ nav a {
   transition: color 0.3s ease;
 }
 
+/* 🔷 Logo Image Focus Patch */
+nav a img {
+  outline: none;
+  border: none;
+  box-shadow: none;
+}
+
 nav a:hover {
   color: #00bfff; /* Bright blue hover */
 }
@@ -149,6 +156,7 @@ footer {
   font-size: 0.9rem;
   color: #555;
 }
+
 /* 🔷 Ticker Input Box */
 #ticker-input {
   width: 100%;
@@ -161,3 +169,5 @@ footer {
   box-sizing: border-box;
   font-family: Arial, sans-serif;
 }
+
+   
