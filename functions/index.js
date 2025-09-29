@@ -1,4 +1,3 @@
-// Firebase Functions and Admin SDK
 import { onRequest, onCall } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
@@ -10,6 +9,7 @@ import { BigQuery } from '@google-cloud/bigquery';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import cors from 'cors';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -17,6 +17,9 @@ const __dirname = dirname(__filename);
 // Initialize BigQuery and Firebase Admin
 const bigquery = new BigQuery();
 initializeApp();
+
+// Configure CORS
+const corsHandler = cors({ origin: ['https://www.swingtrader.co.uk'], methods: ['POST', 'OPTIONS'], allowedHeaders: ['Content-Type'] });
 
 // Helper function to fetch and insert data
 async function loadDataForTicker(ticker, startDate, endDate) {
@@ -148,32 +151,30 @@ export const loadHistoricalData = onRequest(
     timeoutSeconds: 300,
     memory: '1GB'
   },
-  async (req, res) => {
-    res.set('Access-Control-Allow-Origin', 'https://www.swingtrader.co.uk');
-    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-
-    if (req.method === 'OPTIONS') {
-      return res.status(204).send('');
-    }
-
-    try {
-      const { ticker } = req.body;
-      if (!ticker || typeof ticker !== 'string') {
-        return res.status(400).send('Invalid or missing ticker');
+  (req, res) => {
+    corsHandler(req, res, async () => {
+      if (req.method === 'OPTIONS') {
+        return res.status(204).send('');
       }
 
-      const endDate = new Date().toISOString().split('T')[0];
-      const startDate = new Date();
-      startDate.setFullYear(startDate.getFullYear() - 10);
-      const formattedStartDate = startDate.toISOString().split('T')[0];
+      try {
+        const { ticker } = req.body;
+        if (!ticker || typeof ticker !== 'string') {
+          return res.status(400).send('Invalid or missing ticker');
+        }
 
-      const rowsInserted = await loadDataForTicker(ticker, formattedStartDate, endDate);
-      return res.status(200).send(`Successfully inserted ${rowsInserted} rows for ${ticker}`);
-    } catch (error) {
-      logger.error(`Error in loadHistoricalData for ${ticker}: ${error.message}`);
-      return res.status(500).send(`Error: ${error.message}`);
-    }
+        const endDate = new Date().toISOString().split('T')[0];
+        const startDate = new Date();
+        startDate.setFullYear(startDate.getFullYear() - 10);
+        const formattedStartDate = startDate.toISOString().split('T')[0];
+
+        const rowsInserted = await loadDataForTicker(ticker, formattedStartDate, endDate);
+        return res.status(200).send(`Successfully inserted ${rowsInserted} rows for ${ticker}`);
+      } catch (error) {
+        logger.error(`Error in loadHistoricalData for ${ticker}: ${error.message}`);
+        return res.status(500).send(`Error: ${error.message}`);
+      }
+    });
   }
 );
 
