@@ -1,4 +1,4 @@
- // Firebase Functions and Admin SDK
+// Firebase Functions and Admin SDK
 import { onRequest, onCall } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
@@ -212,4 +212,3 @@ export const protectedPage = onRequest(
     }
   }
 );
-
