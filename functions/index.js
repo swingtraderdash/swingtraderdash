@@ -28,8 +28,16 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
   try {
     const response = await fetch(url);
-    const rawText = await response.text();
-    logger.info(`[Tiingo] Raw response text for ${ticker}: ${rawText}`);
+    logger.info(`[Tiingo] Response status for ${ticker}: ${response.status}`);
+
+    let rawText;
+    try {
+      rawText = await response.text();
+      logger.info(`[Tiingo] Raw response text for ${ticker}: ${rawText}`);
+    } catch (textErr) {
+      logger.error(`[Tiingo] Failed to read response text for ${ticker}: ${textErr.message}`);
+      throw new Error('Failed to read Tiingo response body');
+    }
 
     let data;
     try {
@@ -204,6 +212,3 @@ export const protectedPage = onRequest(
   }
 );
 
-
-    
-  
