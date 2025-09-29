@@ -1,12 +1,19 @@
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js";
 import { app } from "/js/firebaseConfig.js";
 
 const db = getFirestore(app);
 const auth = getAuth(app);
-const functions = getFunctions(app);
-const fetchTiingo = httpsCallable(functions, "fetchTiingo");
+
+// ✅ Replaces legacy Firebase Function with direct Cloud Run call
+async function fetchTiingo({ ticker }) {
+  const response = await fetch('https://fetchtiingo-mtxejoobqq-uc.a.run.app', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ticker })
+  });
+  return await response.json();
+}
 
 // Just saves the watchlist array—no API calls!
 export async function saveWatchlist(tickers) {
@@ -43,13 +50,12 @@ export async function fetchMetadataForTickers(tickersToFetch) {
       const existingSnap = await getDoc(tickerDocRef);
       if (existingSnap.exists()) {
         console.log(`[storage] ✅ Metadata already exists for ${ticker}—skipping API`);
-        continue;  // Skip API if present
+        continue;
       }
 
       // Only fetch if missing
       try {
-        const result = await fetchTiingo({ ticker });
-        const data = result.data;
+        const data = await fetchTiingo({ ticker });
 
         if (!data || !data.ticker || !data.name) {
           throw new Error("Missing expected Tiingo fields");
