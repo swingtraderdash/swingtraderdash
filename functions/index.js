@@ -28,10 +28,13 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
   try {
     const response = await fetch(url);
+    const rawText = await response.text();
+    logger.info(`[Tiingo] Raw response text for ${ticker}: ${rawText}`);
+
     let data;
     try {
-      data = await response.json();
-      logger.info(`[Tiingo] Raw response data for ${ticker}: ${JSON.stringify(data)}`);
+      data = JSON.parse(rawText);
+      logger.info(`[Tiingo] Parsed JSON for ${ticker}: ${JSON.stringify(data)}`);
     } catch (jsonErr) {
       logger.error(`[Tiingo] JSON parse failed for ${ticker}: ${jsonErr.message}`);
       throw new Error('Failed to parse Tiingo response');
@@ -201,4 +204,6 @@ export const protectedPage = onRequest(
   }
 );
 
- 
+
+    
+  
