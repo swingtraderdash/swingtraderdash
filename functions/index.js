@@ -130,10 +130,15 @@ export const loadHistoricalData = onRequest(
     memory: '1GB'
   },
   async (req, res) => {
+    res.set('Access-Control-Allow-Origin', 'https://www.swingtrader.co.uk');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+      return res.status(204).send('');
+    }
+
     try {
-      if (req.method !== 'POST') {
-        return res.status(405).send('Method Not Allowed');
-      }
       const { ticker } = req.body;
       if (!ticker || typeof ticker !== 'string') {
         return res.status(400).send('Invalid or missing ticker');
@@ -188,6 +193,3 @@ export const protectedPage = onRequest(
     }
   }
 );
-
-
-    
