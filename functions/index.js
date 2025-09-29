@@ -1,4 +1,4 @@
-   // Firebase Functions and Admin SDK
+// Firebase Functions and Admin SDK
 import { onRequest, onCall } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
@@ -28,12 +28,14 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
   try {
     const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Tiingo API error: ${response.status}`);
+    let data;
+    try {
+      data = await response.json();
+      logger.info(`[Tiingo] Raw response data for ${ticker}: ${JSON.stringify(data)}`);
+    } catch (jsonErr) {
+      logger.error(`[Tiingo] JSON parse failed for ${ticker}: ${jsonErr.message}`);
+      throw new Error('Failed to parse Tiingo response');
     }
-
-    const data = await response.json();
-    logger.info(`[Tiingo] Raw response data for ${ticker}: ${JSON.stringify(data)}`);
 
     if (!Array.isArray(data) || data.length === 0) {
       throw new Error('No data returned from Tiingo');
@@ -198,5 +200,5 @@ export const protectedPage = onRequest(
     }
   }
 );
-   
-  
+
+ 
