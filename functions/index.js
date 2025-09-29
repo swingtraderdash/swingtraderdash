@@ -1,4 +1,4 @@
-// Firebase Functions and Admin SDK
+ // Firebase Functions and Admin SDK
 import { onRequest, onCall } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
@@ -26,56 +26,57 @@ async function loadDataForTicker(ticker, startDate, endDate) {
   const url = `https://api.tiingo.com/tiingo/daily/${ticker}/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_API_KEY}`;
   logger.info(`[Tiingo] Historical fetch URL for ${ticker}: ${url}`);
 
+  let response;
   try {
-    const response = await fetch(url);
+    response = await fetch(url);
     logger.info(`[Tiingo] Response status for ${ticker}: ${response.status}`);
-
-    let rawText;
-    try {
-      rawText = await response.text();
-      logger.info(`[Tiingo] Raw response text for ${ticker}: ${rawText}`);
-    } catch (textErr) {
-      logger.error(`[Tiingo] Failed to read response text for ${ticker}: ${textErr.message}`);
-      throw new Error('Failed to read Tiingo response body');
-    }
-
-    let data;
-    try {
-      data = JSON.parse(rawText);
-      logger.info(`[Tiingo] Parsed JSON for ${ticker}: ${JSON.stringify(data)}`);
-    } catch (jsonErr) {
-      logger.error(`[Tiingo] JSON parse failed for ${ticker}: ${jsonErr.message}`);
-      throw new Error('Failed to parse Tiingo response');
-    }
-
-    if (!Array.isArray(data) || data.length === 0) {
-      throw new Error('No data returned from Tiingo');
-    }
-
-    const rows = data.map(item => ({
-      ticker_symbol: ticker,
-      date: item.date,
-      close: item.close,
-      high: item.high,
-      low: item.low,
-      open: item.open,
-      volume: item.volume
-    }));
-
-    const datasetId = 'swing_trader_data';
-    const tableId = 'ticker_history';
-
-    await bigquery
-      .dataset(datasetId)
-      .table(tableId)
-      .insert(rows);
-
-    logger.info(`Inserted ${rows.length} rows for ${ticker} into BigQuery`);
-    return rows.length;
-  } catch (error) {
-    logger.error(`Error in loadDataForTicker for ${ticker}: ${error.message}`);
-    throw error;
+  } catch (fetchErr) {
+    logger.error(`[Tiingo] Fetch failed for ${ticker}: ${fetchErr.message}`);
+    throw new Error('Failed to reach Tiingo API');
   }
+
+  let rawText;
+  try {
+    rawText = await response.text();
+    logger.info(`[Tiingo] Raw response text for ${ticker}: ${rawText}`);
+  } catch (textErr) {
+    logger.error(`[Tiingo] Failed to read response text for ${ticker}: ${textErr.message}`);
+    throw new Error('Failed to read Tiingo response body');
+  }
+
+  let data;
+  try {
+    data = JSON.parse(rawText);
+    logger.info(`[Tiingo] Parsed JSON for ${ticker}: ${JSON.stringify(data)}`);
+  } catch (jsonErr) {
+    logger.error(`[Tiingo] JSON parse failed for ${ticker}: ${jsonErr.message}`);
+    throw new Error('Failed to parse Tiingo response');
+  }
+
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error('No data returned from Tiingo');
+  }
+
+  const rows = data.map(item => ({
+    ticker_symbol: ticker,
+    date: item.date,
+    close: item.close,
+    high: item.high,
+    low: item.low,
+    open: item.open,
+    volume: item.volume
+  }));
+
+  const datasetId = 'swing_trader_data';
+  const tableId = 'ticker_history';
+
+  await bigquery
+    .dataset(datasetId)
+    .table(tableId)
+    .insert(rows);
+
+  logger.info(`Inserted ${rows.length} rows for ${ticker} into BigQuery`);
+  return rows.length;
 }
 
 // Fetch Tiingo metadata
