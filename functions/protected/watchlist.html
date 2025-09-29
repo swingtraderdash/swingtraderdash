@@ -184,7 +184,7 @@
                       for (let i = 0; i < newTickers.length; i++) {
                         const ticker = newTickers[i];
                         console.log(`📡 Sending historical data request for ${ticker} to Cloud Run`);
-                        const response = await fetch('https://loadhistoricaldata-mtxejoobqq-uc.a.run.app', {
+                        const response = await fetch('https://loadhistoricaldata-swingtraderdash-1a958-uc.a.run.app', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ ticker: ticker })
@@ -290,5 +290,9 @@
   </script>
 </body>
 </html>
+
+   
+          
+             
 
      
