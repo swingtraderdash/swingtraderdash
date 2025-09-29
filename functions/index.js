@@ -21,7 +21,10 @@ initializeApp();
 // Helper function to fetch and insert data
 async function loadDataForTicker(ticker, startDate, endDate) {
   const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
+  logger.info(`[Tiingo] API key presence: ${TIINGO_API_KEY ? '✅ Present' : '❌ Missing'}`);
+
   const url = `https://api.tiingo.com/tiingo/daily/${ticker}/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_API_KEY}`;
+  logger.info(`[Tiingo] Historical fetch URL for ${ticker}: ${url}`);
 
   try {
     const response = await fetch(url);
@@ -193,3 +196,5 @@ export const protectedPage = onRequest(
     }
   }
 );
+
+       
