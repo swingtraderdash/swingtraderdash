@@ -38,6 +38,20 @@
       font-size: 1.2rem;
       color: #008000;
     }
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      margin-right: 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
   <script type="module" src="/js/firebaseConfig.js" defer></script>
   <script type="module" src="/js/main.js" defer></script>
@@ -115,7 +129,23 @@
       };
     }
 
-    function showTemporaryMessage(text, duration = 2000) {
+    function showLoadingMessage(ticker) {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="modal">
+          <div class="spinner"></div>
+          <p>Loading historical data for ${ticker}...</p>
+        </div>
+      `;
+      modalContainer.style.display = 'block';
+    }
+
+    function hideLoadingMessage() {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.style.display = 'none';
+    }
+
+    function showTemporaryMessage(text, duration = 5000) {
       const modalContainer = document.getElementById('modal-container');
       modalContainer.innerHTML = `
         <div class="modal">
@@ -183,28 +213,34 @@
                     try {
                       for (let i = 0; i < newTickers.length; i++) {
                         const ticker = newTickers[i];
+                        showLoadingMessage(ticker);
                         console.log(`📡 Sending historical data request for ${ticker} to Cloud Run`);
                         const response = await fetch('https://loadhistoricaldata-27892139023.us-central1.run.app', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ ticker: ticker })
                         });
+                        const responseText = await response.text();
+                        hideLoadingMessage();
                         if (!response.ok) {
-                          console.error(`❌ Historical load failed for ${ticker}: ${response.status} ${response.statusText}`);
-                          throw new Error(`Failed to fetch historical data for ${ticker}: ${response.statusText}`);
+                          console.error(`❌ Historical load failed for ${ticker}: ${response.status} ${responseText}`);
+                          showTemporaryMessage(`🚫 Failed to load historical data for ${ticker}: ${responseText}`, 5000);
+                          throw new Error(`Failed to fetch historical data for ${ticker}: ${responseText}`);
                         }
-                        console.log(`✅ Historical data fetched for ${ticker}`);
+                        console.log(`✅ Historical data fetched for ${ticker}: ${responseText}`);
+                        showTemporaryMessage(`✅ ${responseText}`, 5000);
                         if (i < newTickers.length - 1) {
                           await new Promise(resolve => setTimeout(resolve, 1200));
                         }
                       }
-                      showTemporaryMessage(`✅ Historical data requested for ${newTickers.join(', ')}!`, 3000);
                     } catch (error) {
+                      hideLoadingMessage();
                       console.error(`❌ Error fetching historical data: ${error.message}`);
-                      showTemporaryMessage(`🚫 Error: ${error.message}`, 3000);
+                      showTemporaryMessage(`🚫 Error: ${error.message}`, 5000);
                     }
                   }, () => {
                     console.log("❌ Historical fetch cancelled.");
+                    hideLoadingMessage();
                   });
                 } else {
                   showTemporaryMessage(`✅ Added tickers, but metadata fetch failed for some.`, 3000);
@@ -225,12 +261,12 @@
     });
 
     async function displayWatchlist() {
-      console.log("📋 displayWatchlist() fired"); // Microstep 1
+      console.log("📋 displayWatchlist() fired");
       const tickerList = document.getElementById('ticker-list');
       if (!tickerList) return;
 
       const watchlist = await getWatchlist();
-      console.log("📋 Watchlist loaded:", watchlist); // Microstep 2
+      console.log("📋 Watchlist loaded:", watchlist);
 
       if (!watchlist || watchlist.length === 0) {
         tickerList.innerHTML = '<p>No tickers yet. Add some using the form above.</p>';
