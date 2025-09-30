@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SwingTrader - Watchlist</title>
-  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="/js/main.css" />
   <style>
     .ticker-entry {
       margin-bottom: 10px;
@@ -145,17 +145,19 @@
       modalContainer.style.display = 'none';
     }
 
-    function showTemporaryMessage(text, duration = 5000) {
+    function showPersistentMessage(text, onConfirm) {
       const modalContainer = document.getElementById('modal-container');
       modalContainer.innerHTML = `
         <div class="modal">
           <p>${text}</p>
+          <button id="ok-btn">OK</button>
         </div>
       `;
       modalContainer.style.display = 'block';
-      setTimeout(() => {
+      document.getElementById('ok-btn').onclick = () => {
         modalContainer.style.display = 'none';
-      }, duration);
+        if (onConfirm) onConfirm();
+      };
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -224,11 +226,15 @@
                         hideLoadingMessage();
                         if (!response.ok) {
                           console.error(`❌ Historical load failed for ${ticker}: ${response.status} ${responseText}`);
-                          showTemporaryMessage(`🚫 Failed to load historical data for ${ticker}: ${responseText}`, 5000);
+                          showPersistentMessage(`🚫 Failed to load historical data for ${ticker}: ${responseText}`, () => {
+                            console.log("🚫 Error popup dismissed");
+                          });
                           throw new Error(`Failed to fetch historical data for ${ticker}: ${responseText}`);
                         }
                         console.log(`✅ Historical data fetched for ${ticker}: ${responseText}`);
-                        showTemporaryMessage(`✅ ${responseText}`, 5000);
+                        showPersistentMessage(`✅ ${responseText}`, () => {
+                          console.log("✅ Success popup dismissed");
+                        });
                         if (i < newTickers.length - 1) {
                           await new Promise(resolve => setTimeout(resolve, 1200));
                         }
@@ -236,21 +242,29 @@
                     } catch (error) {
                       hideLoadingMessage();
                       console.error(`❌ Error fetching historical data: ${error.message}`);
-                      showTemporaryMessage(`🚫 Error: ${error.message}`, 5000);
+                      showPersistentMessage(`🚫 Error: ${error.message}`, () => {
+                        console.log("🚫 Error popup dismissed");
+                      });
                     }
                   }, () => {
                     console.log("❌ Historical fetch cancelled.");
                     hideLoadingMessage();
                   });
                 } else {
-                  showTemporaryMessage(`✅ Added tickers, but metadata fetch failed for some.`, 3000);
+                  showPersistentMessage(`✅ Added tickers, but metadata fetch failed for some.`, () => {
+                    console.log("🚫 Metadata error popup dismissed");
+                  });
                 }
                 await displayWatchlist();
               } else {
-                showTemporaryMessage('🚫 Failed to add tickers.', 3000);
+                showPersistentMessage('🚫 Failed to add tickers.', () => {
+                  console.log("🚫 Add tickers error popup dismissed");
+                });
               }
             } else {
-              showTemporaryMessage('No new tickers to add.', 2000);
+              showPersistentMessage('No new tickers to add.', () => {
+                console.log("🚫 No new tickers popup dismissed");
+              });
             }
             tickerInput.value = '';
           }, () => {
@@ -314,10 +328,14 @@
         const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
         const success = await saveWatchlist(updatedWatchlist);
         if (success) {
-          showTemporaryMessage(`✅ ${ticker} successfully deleted from your watchlist`, 3000);
+          showPersistentMessage(`✅ ${ticker} successfully deleted from your watchlist`, () => {
+            console.log("✅ Delete popup dismissed");
+          });
           await displayWatchlist();
         } else {
-          showTemporaryMessage(`🚫 Failed to delete ${ticker}. Please try again.`, 3000);
+          showPersistentMessage(`🚫 Failed to delete ${ticker}. Please try again.`, () => {
+            console.log("🚫 Delete error popup dismissed");
+          });
         }
       }, () => {
         console.log("❌ Delete cancelled.");
@@ -326,3 +344,7 @@
   </script>
 </body>
 </html>
+              
+     
+         
+         
