@@ -157,12 +157,14 @@ export const loadHistoricalData = onRequest(
         return res.status(204).send('');
       }
 
-      try {
-        const { ticker } = req.body;
-        if (!ticker || typeof ticker !== 'string') {
-          return res.status(400).send('Invalid or missing ticker');
-        }
+      // Extract ticker outside try block for logging in catch
+      const { ticker } = req.body || {};
+      if (!ticker || typeof ticker !== 'string') {
+        logger.error('Invalid or missing ticker in request body');
+        return res.status(400).send('Invalid or missing ticker');
+      }
 
+      try {
         const endDate = new Date().toISOString().split('T')[0];
         const startDate = new Date();
         startDate.setFullYear(startDate.getFullYear() - 10);
@@ -213,3 +215,10 @@ export const protectedPage = onRequest(
     }
   }
 );
+  
+   
+   
+ 
+   
+
+   
