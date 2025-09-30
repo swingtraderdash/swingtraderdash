@@ -34,7 +34,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
     response = await fetch(url);
     logger.info(`[Tiingo] Response status for ${ticker}: ${response.status}`);
   } catch (fetchErr) {
-    logger.error(`[Tiingo] Fetch failed for ${ticker}: ${fetchErr.message}`);
+    logger.error(`[Tiingo] Fetch failed for ${ticker}: ${fetchErr.message}`, { error: fetchErr });
     throw new Error('Failed to reach Tiingo API');
   }
 
@@ -43,7 +43,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
     rawText = await response.text();
     logger.info(`[Tiingo] Raw response text for ${ticker}: ${rawText}`);
   } catch (textErr) {
-    logger.error(`[Tiingo] Failed to read response text for ${ticker}: ${textErr.message}`);
+    logger.error(`[Tiingo] Failed to read response text for ${ticker}: ${textErr.message}`, { error: textErr });
     throw new Error('Failed to read Tiingo response body');
   }
 
@@ -52,7 +52,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
     data = JSON.parse(rawText);
     logger.info(`[Tiingo] Parsed JSON for ${ticker}: ${JSON.stringify(data)}`);
   } catch (jsonErr) {
-    logger.error(`[Tiingo] JSON parse failed for ${ticker}: ${jsonErr.message}`);
+    logger.error(`[Tiingo] JSON parse failed for ${ticker}: ${jsonErr.message}`, { error: jsonErr });
     throw new Error('Failed to parse Tiingo response');
   }
 
@@ -73,12 +73,17 @@ async function loadDataForTicker(ticker, startDate, endDate) {
   const datasetId = 'swing_trader_data';
   const tableId = 'ticker_history';
 
-  await bigquery
-    .dataset(datasetId)
-    .table(tableId)
-    .insert(rows);
+  try {
+    await bigquery
+      .dataset(datasetId)
+      .table(tableId)
+      .insert(rows);
+    logger.info(`Inserted ${rows.length} rows for ${ticker} into BigQuery`);
+  } catch (bigQueryErr) {
+    logger.error(`[BigQuery] Failed to insert rows for ${ticker}: ${bigQueryErr.message}`, { error: bigQueryErr, rows });
+    throw new Error(`Failed to insert into BigQuery: ${bigQueryErr.message}`);
+  }
 
-  logger.info(`Inserted ${rows.length} rows for ${ticker} into BigQuery`);
   return rows.length;
 }
 
@@ -98,7 +103,7 @@ export const fetchTiingo = onCall(
     const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=${TIINGO_API_KEY}`;
 
     try {
-      const response = await fetch(url);
+      response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Tiingo responded with status ${response.status}`);
       }
@@ -115,7 +120,7 @@ export const fetchTiingo = onCall(
         name: json.name
       };
     } catch (err) {
-      logger.error(`[Tiingo] fetch:error for ${ticker}: ${err.message}`);
+      logger.error(`[Tiingo] fetch:error for ${ticker}: ${err.message}`, { error: err });
       throw new Error('Failed to fetch Tiingo data.');
     }
   }
@@ -136,7 +141,7 @@ export const loadDailyEODData = onSchedule(
       try {
         await loadDataForTicker(ticker, date, date);
       } catch (error) {
-        logger.error(`Error in loadDailyEODData for ${ticker}: ${error.message}`);
+        logger.error(`Error in loadDailyEODData for ${ticker}: ${error.message}`, { error: error });
       }
     }
     logger.info('loadDailyEODData completed for tickers:', tickers);
@@ -160,7 +165,7 @@ export const loadHistoricalData = onRequest(
       // Extract ticker outside try block for logging in catch
       const { ticker } = req.body || {};
       if (!ticker || typeof ticker !== 'string') {
-        logger.error('Invalid or missing ticker in request body');
+        logger.error('Invalid or missing ticker in request body', { body: req.body });
         return res.status(400).send('Invalid or missing ticker');
       }
 
@@ -173,7 +178,7 @@ export const loadHistoricalData = onRequest(
         const rowsInserted = await loadDataForTicker(ticker, formattedStartDate, endDate);
         return res.status(200).send(`Successfully inserted ${rowsInserted} rows for ${ticker}`);
       } catch (error) {
-        logger.error(`Error in loadHistoricalData for ${ticker}: ${error.message}`);
+        logger.error(`Error in loadHistoricalData for ${ticker}: ${error.message}`, { error: error });
         return res.status(500).send(`Error: ${error.message}`);
       }
     });
@@ -210,10 +215,12 @@ export const protectedPage = onRequest(
       const fileContent = await readFile(filePath, 'utf8');
       res.status(200).set('Content-Type', 'text/html').send(fileContent);
     } catch (error) {
-      logger.error("🚫 Token verification failed:", error.message);
-      res.redirect(302, '/index.html');
+      logger.error("🚫 Token verification failed:", error.message, { error: error });
+      return res.redirect(302, '/index.html');
     }
   }
 );
- 
+
    
+
+      
