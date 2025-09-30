@@ -174,12 +174,13 @@ export const loadDailyEODData = onSchedule(
 export const loadHistoricalData = onRequest(
   {
     region: 'us-central1',
-    timeoutSeconds: 300,
+    timeoutSeconds: 540,
     memory: '1GB'
   },
   (req, res) => {
     corsHandler(req, res, async () => {
       if (req.method === 'OPTIONS') {
+        logger.info('[loadHistoricalData] Handling OPTIONS request');
         return res.status(204).send('');
       }
 
@@ -196,7 +197,9 @@ export const loadHistoricalData = onRequest(
         startDate.setFullYear(startDate.getFullYear() - 10);
         const formattedStartDate = startDate.toISOString().split('T')[0];
 
+        logger.info(`[loadHistoricalData] Starting data load for ${ticker} from ${formattedStartDate} to ${endDate}`);
         const rowsInserted = await loadDataForTicker(ticker, formattedStartDate, endDate);
+        logger.info(`[loadHistoricalData] Sending success response for ${ticker}: ${rowsInserted} rows inserted`);
         return res.status(200).send(`Successfully inserted ${rowsInserted} rows for ${ticker}`);
       } catch (error) {
         logger.error(`Error in loadHistoricalData for ${ticker}: ${error.message}`, { error: error });
@@ -241,11 +244,5 @@ export const protectedPage = onRequest(
     }
   }
 );
-  
-  
-      
-  
-   
-
 
      
