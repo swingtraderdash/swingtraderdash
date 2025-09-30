@@ -23,7 +23,7 @@ const corsHandler = cors({ origin: ['https://www.swingtrader.co.uk'], methods: [
 
 // Helper function to fetch and insert data
 async function loadDataForTicker(ticker, startDate, endDate) {
-  const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
+  const TIINGO_API_KEY = '134b85cc4ea8fe62c59ee2fca25fe5b0033117cf';
   logger.info(`[Tiingo] API key presence: ${TIINGO_API_KEY ? '✅ Present' : '❌ Missing'}`);
 
   const url = `https://api.tiingo.com/tiingo/daily/${ticker}/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_API_KEY}`;
@@ -87,7 +87,7 @@ export const fetchTiingo = onCall(
   { region: 'us-central1' },
   async (request) => {
     const ticker = request.data.ticker;
-    const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
+    const TIINGO_API_KEY = '134b85cc4ea8fe62c59ee2fca25fe5b0033117cf';
 
     logger.info(`[Tiingo] Runtime key: ${TIINGO_API_KEY ? '✅ Present' : '❌ Missing'}`);
 
@@ -215,10 +215,5 @@ export const protectedPage = onRequest(
     }
   }
 );
-  
-   
-   
  
-   
-
    
