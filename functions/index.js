@@ -62,7 +62,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
   const rows = data.map(item => ({
     ticker_symbol: ticker,
-    date: item.date,
+    date: item.date.split('T')[0], // Extract YYYY-MM-DD from ISO 8601 date
     close: item.close,
     high: item.high,
     low: item.low,
@@ -103,7 +103,7 @@ export const fetchTiingo = onCall(
     const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=${TIINGO_API_KEY}`;
 
     try {
-      response = await fetch(url);
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Tiingo responded with status ${response.status}`);
       }
@@ -220,7 +220,5 @@ export const protectedPage = onRequest(
     }
   }
 );
+  
 
-   
-
-      
