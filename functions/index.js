@@ -3,7 +3,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, writeFile, unlink } from 'fs/promises';
 import fetch from 'node-fetch';
 import { BigQuery } from '@google-cloud/bigquery';
 import path from 'path';
@@ -76,6 +76,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
   // Write rows to a temporary JSON file for batch loading
   const tempFilePath = path.join(os.tmpdir(), `ticker_data_${ticker}_${Date.now()}.json`);
+  let rowsInserted;
   try {
     const jsonLines = rows.map(row => JSON.stringify(row)).join('\n');
     await writeFile(tempFilePath, jsonLines);
@@ -90,6 +91,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
         writeDisposition: 'WRITE_APPEND'
       });
     logger.info(`[BigQuery] Loaded ${rows.length} rows for ${ticker} into BigQuery`);
+    rowsInserted = rows.length;
   } catch (bigQueryErr) {
     logger.error(`[BigQuery] Failed to load rows for ${ticker}: ${bigQueryErr.message}`, { error: bigQueryErr, rows });
     throw new Error(`Failed to load into BigQuery: ${bigQueryErr.message}`);
@@ -99,11 +101,11 @@ async function loadDataForTicker(ticker, startDate, endDate) {
       await unlink(tempFilePath);
       logger.info(`[BigQuery] Cleaned up temporary file: ${tempFilePath}`);
     } catch (unlinkErr) {
-      logger.warn(`[BigQuery] Failed to clean up temporary file: ${unlinkErr.message}`);
+      logger.warn(`[BigQuery] Failed to clean up temporary file: ${unlinkErr.message}`, { error: unlinkErr });
     }
   }
 
-  return rows.length;
+  return rowsInserted;
 }
 
 // Fetch Tiingo metadata
@@ -239,6 +241,9 @@ export const protectedPage = onRequest(
     }
   }
 );
- 
-
     
+
+   
+
+
+     
