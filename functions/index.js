@@ -11,9 +11,8 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import cors from 'cors';
 import os from 'os';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { defineSecret } from 'firebase-functions/params';
+const TIINGO_API_KEY = defineSecret('TIINGO_API_KEY');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -28,14 +27,14 @@ const corsHandler = cors({
 });
 
 async function loadDataForTicker(ticker, startDate, endDate) {
-  const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
-  if (!TIINGO_API_KEY) {
-    logger.error('[Tiingo] API key missing from environment variables');
+  const apiKey = TIINGO_API_KEY.value();
+  if (!apiKey) {
+    logger.error('[Tiingo] API key missing from Firebase Secrets');
     throw new Error('Tiingo API key not configured');
   }
   logger.info(`[Tiingo] API key presence: ✅ Present`);
 
-  const url = `https://api.tiingo.com/tiingo/daily/${ticker}/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_API_KEY}`;
+  const url = `https://api.tiingo.com/tiingo/daily/${ticker}/prices?startDate=${startDate}&endDate=${endDate}&token=${apiKey}`;
   logger.info(`[Tiingo] Historical fetch URL for ${ticker}: ${url}`);
 
   let response;
@@ -117,9 +116,9 @@ export const fetchTiingo = onCall(
   { region: 'us-central1' },
   async (request) => {
     const ticker = request.data.ticker;
-    const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
-    if (!TIINGO_API_KEY) {
-      logger.error('[Tiingo] API key missing from environment variables');
+    const apiKey = TIINGO_API_KEY.value();
+    if (!apiKey) {
+      logger.error('[Tiingo] API key missing from Firebase Secrets');
       throw new Error('Tiingo API key not configured');
     }
     logger.info(`[Tiingo] Runtime key: ✅ Present`);
@@ -128,7 +127,7 @@ export const fetchTiingo = onCall(
       throw new Error('Ticker is required and must be a string.');
     }
 
-    const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=${TIINGO_API_KEY}`;
+    const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=${apiKey}`;
 
     try {
       const response = await fetch(url);
@@ -213,6 +212,7 @@ export const loadHistoricalData = onRequest(
   }
 );
 
+
 export const protectedPage = onRequest(
   { region: 'us-central1' },
   async (req, res) => {
@@ -233,4 +233,18 @@ export const protectedPage = onRequest(
     const idToken = authHeader.split('Bearer ')[1];
 
     try {
-      const decoded = await getAuth
+      const decoded = await getAuth().verifyIdToken(idToken);
+      logger.info(`✅ Token verified for UID: ${decoded.uid}`);
+
+      const filePath = path.join(__dirname, 'protected', req.path.replace(/^\//, ''));
+      logger.info(`📄 Serving file: ${filePath}`);
+
+      const fileContent = await readFile(filePath, 'utf8');
+      res.status(200).set('Content-Type', 'text/html').send(fileContent);
+    } catch (error) {
+      logger.error(`🚫 Token verification failed: ${error.message}`, { error: error });
+      return res.redirect(302, '/index.html');
+    }
+  }
+);
+
