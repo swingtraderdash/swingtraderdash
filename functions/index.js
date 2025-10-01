@@ -11,7 +11,9 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import cors from 'cors';
 import os from 'os';
-import { config } from 'firebase-functions'; // Added import for functions.config()
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,11 +23,15 @@ const bigquery = new BigQuery();
 initializeApp();
 
 // Configure CORS
-const corsHandler = cors({ origin: ['https://www.swingtrader.co.uk'], methods: ['POST', 'OPTIONS'], allowedHeaders: ['Content-Type'] });
+const corsHandler = cors({
+  origin: ['https://www.swingtrader.co.uk'],
+  methods: ['POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+});
 
 // Helper function to fetch and insert data
 async function loadDataForTicker(ticker, startDate, endDate) {
-  const TIINGO_API_KEY = config().env.tiingo_api_key;
+  const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
   if (!TIINGO_API_KEY) {
     logger.error('[Tiingo] API key missing from environment variables');
     throw new Error('Tiingo API key not configured');
@@ -68,7 +74,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
   const rows = data.map(item => ({
     ticker_symbol: ticker,
-    date: item.date.split('T')[0], // Extract YYYY-MM-DD from ISO 8601 date
+    date: item.date.split('T')[0],
     close: item.close,
     high: item.high,
     low: item.low,
@@ -79,7 +85,6 @@ async function loadDataForTicker(ticker, startDate, endDate) {
   const datasetId = 'swing_trader_data';
   const tableId = 'ticker_history';
 
-  // Write rows to a temporary JSON file for batch loading
   const tempFilePath = path.join(os.tmpdir(), `ticker_data_${ticker}_${Date.now()}.json`);
   let rowsInserted;
   try {
@@ -87,7 +92,6 @@ async function loadDataForTicker(ticker, startDate, endDate) {
     await writeFile(tempFilePath, jsonLines);
     logger.info(`[BigQuery] Wrote ${rows.length} rows to temporary file: ${tempFilePath}`);
 
-    // Perform batch load into BigQuery
     await bigquery
       .dataset(datasetId)
       .table(tableId)
@@ -101,7 +105,6 @@ async function loadDataForTicker(ticker, startDate, endDate) {
     logger.error(`[BigQuery] Failed to load rows for ${ticker}: ${bigQueryErr.message}`, { error: bigQueryErr, rows });
     throw new Error(`Failed to load into BigQuery: ${bigQueryErr.message}`);
   } finally {
-    // Clean up temporary file
     try {
       await unlink(tempFilePath);
       logger.info(`[BigQuery] Cleaned up temporary file: ${tempFilePath}`);
@@ -118,7 +121,7 @@ export const fetchTiingo = onCall(
   { region: 'us-central1' },
   async (request) => {
     const ticker = request.data.ticker;
-    const TIINGO_API_KEY = config().env.tiingo_api_key;
+    const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
     if (!TIINGO_API_KEY) {
       logger.error('[Tiingo] API key missing from environment variables');
       throw new Error('Tiingo API key not configured');
@@ -192,7 +195,6 @@ export const loadHistoricalData = onRequest(
         return res.status(204).send('');
       }
 
-      // Extract ticker outside try block for logging in catch
       const { ticker } = req.body || {};
       if (!ticker || typeof ticker !== 'string') {
         logger.error('Invalid or missing ticker in request body', { body: req.body });
@@ -228,31 +230,9 @@ export const protectedPage = onRequest(
     logger.info("🔐 protectedPage triggered");
 
     const authHeader = req.headers.authorization;
-    logger.info("📡 Authorization header:", authHeader);
+    logger.info("📡 Authorization header
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      logger.warn("🚫 Missing or malformed Authorization header");
-      return res.redirect(302, '/index.html');
-    }
-
-    const idToken = authHeader.split('Bearer ')[1];
-
-    try {
-      const decoded = await getAuth().verifyIdToken(idToken);
-      logger.info("✅ Token verified for UID:", decoded.uid);
-
-      const filePath = path.join(__dirname, 'protected', req.path.replace(/^\//, ''));
-      logger.info("📄 Serving file:", filePath);
-
-      const fileContent = await readFile(filePath, 'utf8');
-      res.status(200).set('Content-Type', 'text/html').send(fileContent);
-    } catch (error) {
-      logger.error("🚫 Token verification failed:", error.message, { error: error });
-      return res.redirect(302, '/index.html');
-    }
-  }
-);
   
-   
-   
+  
+
  
