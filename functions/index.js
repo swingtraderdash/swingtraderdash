@@ -113,7 +113,10 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 }
 
 export const fetchTiingo = onCall(
-  { region: 'us-central1' },
+  {
+    region: 'us-central1',
+    secrets: ['TIINGO_API_KEY']
+  },
   async (request) => {
     const ticker = request.data.ticker;
     const apiKey = TIINGO_API_KEY.value();
