@@ -24,8 +24,12 @@ const corsHandler = cors({ origin: ['https://www.swingtrader.co.uk'], methods: [
 
 // Helper function to fetch and insert data
 async function loadDataForTicker(ticker, startDate, endDate) {
-  const TIINGO_API_KEY = '134b85cc4ea8fe62c59ee2fca25fe5b0033117cf';
-  logger.info(`[Tiingo] API key presence: ${TIINGO_API_KEY ? '✅ Present' : '❌ Missing'}`);
+  const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
+  if (!TIINGO_API_KEY) {
+    logger.error('[Tiingo] API key missing from environment variables');
+    throw new Error('Tiingo API key not configured');
+  }
+  logger.info(`[Tiingo] API key presence: ✅ Present`);
 
   const url = `https://api.tiingo.com/tiingo/daily/${ticker}/prices?startDate=${startDate}&endDate=${endDate}&token=${TIINGO_API_KEY}`;
   logger.info(`[Tiingo] Historical fetch URL for ${ticker}: ${url}`);
@@ -113,9 +117,12 @@ export const fetchTiingo = onCall(
   { region: 'us-central1' },
   async (request) => {
     const ticker = request.data.ticker;
-    const TIINGO_API_KEY = '134b85cc4ea8fe62c59ee2fca25fe5b0033117cf';
-
-    logger.info(`[Tiingo] Runtime key: ${TIINGO_API_KEY ? '✅ Present' : '❌ Missing'}`);
+    const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
+    if (!TIINGO_API_KEY) {
+      logger.error('[Tiingo] API key missing from environment variables');
+      throw new Error('Tiingo API key not configured');
+    }
+    logger.info(`[Tiingo] Runtime key: ✅ Present`);
 
     if (!ticker || typeof ticker !== 'string') {
       throw new Error('Ticker is required and must be a string.');
@@ -244,5 +251,7 @@ export const protectedPage = onRequest(
     }
   }
 );
+       
+      
 
-     
+
