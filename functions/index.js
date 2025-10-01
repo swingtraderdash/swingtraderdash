@@ -1,4 +1,4 @@
-import { onRequest, onCall } from 'firebase-functions/v2/https';
+﻿import { onRequest, onCall } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
 import { initializeApp } from 'firebase-admin/app';
@@ -18,18 +18,15 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Initialize BigQuery and Firebase Admin
 const bigquery = new BigQuery();
 initializeApp();
 
-// Configure CORS
 const corsHandler = cors({
   origin: ['https://www.swingtrader.co.uk'],
   methods: ['POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 });
 
-// Helper function to fetch and insert data
 async function loadDataForTicker(ticker, startDate, endDate) {
   const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
   if (!TIINGO_API_KEY) {
@@ -84,9 +81,9 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
   const datasetId = 'swing_trader_data';
   const tableId = 'ticker_history';
-
   const tempFilePath = path.join(os.tmpdir(), `ticker_data_${ticker}_${Date.now()}.json`);
   let rowsInserted;
+
   try {
     const jsonLines = rows.map(row => JSON.stringify(row)).join('\n');
     await writeFile(tempFilePath, jsonLines);
@@ -116,7 +113,6 @@ async function loadDataForTicker(ticker, startDate, endDate) {
   return rowsInserted;
 }
 
-// Fetch Tiingo metadata
 export const fetchTiingo = onCall(
   { region: 'us-central1' },
   async (request) => {
@@ -158,7 +154,6 @@ export const fetchTiingo = onCall(
   }
 );
 
-// Daily EOD data fetch
 export const loadDailyEODData = onSchedule(
   {
     schedule: 'every 24 hours',
@@ -176,12 +171,11 @@ export const loadDailyEODData = onSchedule(
         logger.error(`Error in loadDailyEODData for ${ticker}: ${error.message}`, { error: error });
       }
     }
-    logger.info('loadDailyEODData completed for tickers:', tickers);
+    logger.info(`loadDailyEODData completed for tickers: ${tickers.join(', ')}`);
     return null;
   }
 );
 
-// Fetch 10 years of historical data
 export const loadHistoricalData = onRequest(
   {
     region: 'us-central1',
@@ -209,7 +203,7 @@ export const loadHistoricalData = onRequest(
 
         logger.info(`[loadHistoricalData] Starting data load for ${ticker} from ${formattedStartDate} to ${endDate}`);
         const rowsInserted = await loadDataForTicker(ticker, formattedStartDate, endDate);
-        logger.info(`[loadHistoricalData] Sending success response for ${ticker}: ${rowsInserted} rows inserted`);
+        logger.info(`[loadHistoricalData] Success for ${ticker}: ${rowsInserted} rows inserted`);
         return res.status(200).send(`Successfully inserted ${rowsInserted} rows for ${ticker}`);
       } catch (error) {
         logger.error(`Error in loadHistoricalData for ${ticker}: ${error.message}`, { error: error });
@@ -219,7 +213,6 @@ export const loadHistoricalData = onRequest(
   }
 );
 
-// Protected page function with logging
 export const protectedPage = onRequest(
   { region: 'us-central1' },
   async (req, res) => {
@@ -230,9 +223,14 @@ export const protectedPage = onRequest(
     logger.info("🔐 protectedPage triggered");
 
     const authHeader = req.headers.authorization;
-    logger.info("📡 Authorization header
+    logger.info(`📡 Authorization header: ${authHeader}`);
 
-  
-  
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      logger.warn("🚫 Missing or malformed Authorization header");
+      return res.redirect(302, '/index.html');
+    }
 
- 
+    const idToken = authHeader.split('Bearer ')[1];
+
+    try {
+      const decoded = await getAuth
