@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import cors from 'cors';
 import os from 'os';
+import { config } from 'firebase-functions'; // Added import for functions.config()
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -24,7 +25,7 @@ const corsHandler = cors({ origin: ['https://www.swingtrader.co.uk'], methods: [
 
 // Helper function to fetch and insert data
 async function loadDataForTicker(ticker, startDate, endDate) {
-  const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
+  const TIINGO_API_KEY = config().env.tiingo_api_key;
   if (!TIINGO_API_KEY) {
     logger.error('[Tiingo] API key missing from environment variables');
     throw new Error('Tiingo API key not configured');
@@ -117,7 +118,7 @@ export const fetchTiingo = onCall(
   { region: 'us-central1' },
   async (request) => {
     const ticker = request.data.ticker;
-    const TIINGO_API_KEY = process.env.TIINGO_API_KEY;
+    const TIINGO_API_KEY = config().env.tiingo_api_key;
     if (!TIINGO_API_KEY) {
       logger.error('[Tiingo] API key missing from environment variables');
       throw new Error('Tiingo API key not configured');
@@ -251,7 +252,7 @@ export const protectedPage = onRequest(
     }
   }
 );
-       
-      
-
-
+  
+   
+   
+ 
