@@ -72,6 +72,58 @@ export async function fetchMetadataForTickers(tickersToFetch) {
   }
 }
 
+// NEW: Targeted historical data fetch—only for provided tickers, skips if exists
+export async function fetchHistoricalDataForTickers(tickersToFetch) {
+  if (!tickersToFetch || tickersToFetch.length === 0) {
+    console.log('[storage] ℹ️ No new tickers to fetch historical data for');
+    return [];
+  }
+
+  const results = [];
+  try {
+    for (let i = 0; i < tickersToFetch.length; i++) {
+      const ticker = tickersToFetch[i];
+      console.log(`[storage] 🔍 Checking historical data for ${ticker}`);
+
+      // Check if historical data already exists in Firestore (using a flag)
+      const tickerDocRef = doc(db, 'historical', ticker);
+      const existingSnap = await getDoc(tickerDocRef);
+      if (existingSnap.exists()) {
+        console.log(`[storage] ✅ Historical data already exists for ${ticker}—skipping API`);
+        results.push({ ticker, success: true, message: 'Historical data already loaded' });
+        continue;
+      }
+
+      // Fetch historical data if missing
+      try {
+        const result = await fetchTiingo({ ticker, type: 'historical' });
+        const data = result.data;
+
+        if (!data || !data.success) {
+          throw new Error(data?.error || 'Invalid historical data response');
+        }
+
+        // Mark as fetched in Firestore to avoid re-fetching
+        await setDoc(tickerDocRef, { fetched: true }, { merge: true });
+        console.log(`[storage] 📈 Fetched and cached historical data for ${ticker}`);
+        results.push({ ticker, success: true, message: 'Historical data loaded successfully' });
+      } catch (error) {
+        console.warn(`[storage] ⚠️ Failed to fetch historical data for ${ticker}:`, error.message);
+        results.push({ ticker, success: false, error: error.message });
+      }
+
+      // Respect rate limits with delay (mimics watchlist.html)
+      if (i < tickersToFetch.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1200));
+      }
+    }
+    return results;
+  } catch (error) {
+    console.error('[storage] 🚫 Failed to fetch historical data:', error.message);
+    return tickersToFetch.map(ticker => ({ ticker, success: false, error: error.message }));
+  }
+}
+
 // Keep getWatchlist unchanged
 export async function getWatchlist() {
   try {
