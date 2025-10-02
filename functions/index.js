@@ -3,6 +3,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 import { readFile, writeFile, unlink } from 'fs/promises';
 import fetch from 'node-fetch';
 import { BigQuery } from '@google-cloud/bigquery';
@@ -174,7 +175,6 @@ export const fetchTiingo = onCall(
     }
   }
 );
-
 export const loadDailyEODData = onSchedule(
   {
     schedule: 'every 24 hours',
@@ -183,7 +183,9 @@ export const loadDailyEODData = onSchedule(
   },
   async (event) => {
     const date = new Date().toISOString().split('T')[0];
-    const tickers = ['GOOG', 'ABBV'];
+
+    const snapshot = await getFirestore().collection('tickers').get();
+    const tickers = snapshot.docs.map(doc => doc.id);
 
     for (const ticker of tickers) {
       try {
@@ -192,6 +194,7 @@ export const loadDailyEODData = onSchedule(
         logger.error(`Error in loadDailyEODData for ${ticker}: ${error.message}`, { error: error });
       }
     }
+
     logger.info(`loadDailyEODData completed for tickers: ${tickers.join(', ')}`);
     return null;
   }
@@ -269,8 +272,6 @@ export const protectedPage = onRequest(
   }
 );
 
-
-  
     
 
  
