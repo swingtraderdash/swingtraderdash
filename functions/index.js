@@ -140,8 +140,7 @@ export const fetchTiingo = onCall(
         logger.info(`[Tiingo] Fetching historical data for ${ticker} from ${formattedStartDate} to ${endDate}`);
         const rowsInserted = await loadDataForTicker(ticker, formattedStartDate, endDate);
         return { success: true, message: `Successfully inserted ${rowsInserted} rows for ${ticker}` };
-      } catch (error) {
-        logger.error(`[Tiingo] Historical fetch failed for ${ticker}: ${error.message}`, { error });
+      }Historical fetch failed for ${ticker}: ${error.message}`, { error });
         throw new Error(`Failed to fetch historical data: ${error.message}`);
       }
     } else {
@@ -168,7 +167,7 @@ export const fetchTiingo = onCall(
         };
       } catch (err) {
         logger.error(`[Tiingo] fetch:error for ${ticker}: ${err.message}`, { error: err });
-        throw new Error('Failed to fetch Tiingo data.');
+        throw new Error(`Failed to fetch Tiingo data: ${err.message}`);
       }
     }
   }
@@ -267,5 +266,10 @@ export const protectedPage = onRequest(
     }
   }
 );
-   
+
+  
+
+  
+
+     
    
