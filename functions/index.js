@@ -1,4 +1,4 @@
-﻿import { onRequest, onCall } from 'firebase-functions/v2/https';
+import { onRequest, onCall } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
 import { initializeApp } from 'firebase-admin/app';
@@ -118,7 +118,7 @@ export const fetchTiingo = onCall(
     secrets: ['TIINGO_API_KEY']
   },
   async (request) => {
-    const ticker = request.data.ticker;
+    const { ticker, type } = request.data;
     const apiKey = TIINGO_API_KEY.value();
     if (!apiKey) {
       logger.error('[Tiingo] API key missing from Firebase Secrets');
@@ -130,28 +130,46 @@ export const fetchTiingo = onCall(
       throw new Error('Ticker is required and must be a string.');
     }
 
-    const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=${apiKey}`;
+    if (type === 'historical') {
+      try {
+        const endDate = new Date().toISOString().split('T')[0];
+        const startDate = new Date();
+        startDate.setFullYear(startDate.getFullYear() - 10);
+        const formattedStartDate = startDate.toISOString().split('T')[0];
 
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Tiingo responded with status ${response.status}`);
+        logger.info(`[Tiingo] Fetching historical data for ${ticker} from ${formattedStartDate} to ${endDate}`);
+        const rowsInserted = await loadDataForTicker(ticker, formattedStartDate, endDate);
+        return { success: true, message: `Successfully inserted ${rowsInserted} rows for ${ticker}` };
+      } catch (error) {
+        logger.error(`[Tiingo] Historical fetch failed for ${ticker}: ${error.message}`, { error });
+        throw new Error(`Failed to fetch historical data: ${error.message}`);
       }
+    } else {
+      const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=${apiKey}`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Tiingo responded with status ${response.status}`);
+        }
 
-      const json = await response.json();
-      logger.info(`[Tiingo] Raw response for ${ticker}: ${JSON.stringify(json)}`);
+        const json = await response.json();
+        logger.info(`[Tiingo] Raw response for ${ticker}: ${JSON.stringify(json)}`);
 
-      if (!json.ticker || !json.name) {
-        throw new Error('Missing expected Tiingo fields');
+        if (!json.ticker || !json.name) {
+          throw new Error('Missing expected Tiingo fields');
+        }
+
+        return {
+          success: true,
+          data: {
+            ticker: json.ticker,
+            name: json.name
+          }
+        };
+      } catch (err) {
+        logger.error(`[Tiingo] fetch:error for ${ticker}: ${err.message}`, { error: err });
+        throw new Error('Failed to fetch Tiingo data.');
       }
-
-      return {
-        ticker: json.ticker,
-        name: json.name
-      };
-    } catch (err) {
-      logger.error(`[Tiingo] fetch:error for ${ticker}: ${err.message}`, { error: err });
-      throw new Error('Failed to fetch Tiingo data.');
     }
   }
 );
@@ -215,7 +233,6 @@ export const loadHistoricalData = onRequest(
   }
 );
 
-
 export const protectedPage = onRequest(
   { region: 'us-central1' },
   async (req, res) => {
@@ -250,4 +267,5 @@ export const protectedPage = onRequest(
     }
   }
 );
-
+   
+   
