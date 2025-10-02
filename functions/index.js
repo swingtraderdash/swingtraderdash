@@ -140,7 +140,221 @@ export const fetchTiingo = onCall(
         logger.info(`[Tiingo] Fetching historical data for ${ticker} from ${formattedStartDate} to ${endDate}`);
         const rowsInserted = await loadDataForTicker(ticker, formattedStartDate, endDate);
         return { success: true, message: `Successfully inserted ${rowsInserted} rows for ${ticker}` };
-      }Historical fetch failed for ${ticker}: ${error.message}`, { error });
+      } catch (error) {
+        logger.error(`[Tiingo] Historical fetch failed for ${ticker}: ${error.message}`, { error });
+        throw new Error(`Failed to fetch historical data: ${error.message}`);
+      }
+    } else {
+      const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=${apiKey}`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Tiingo responded with status ${response.status}`);
+        }
+
+        const json = await response.json();
+        logger.info(`[Tiingo] Raw response for ${ticker}: ${JSON.stringify(json)}`);
+
+        if (!json.ticker || !json.name) {
+          throw new Error('Missing expected Tiingo fields');
+        }
+
+        return {
+          success: true,
+          data: {
+            ticker: json.ticker,
+            name: json.name
+          }
+        };
+      } catch (err) {
+        logger.error(`[Tiingo] fetch:error for ${ticker}: ${err.message}`, { error: err });
+        throw new Error(`Failed to fetch Tiingo data: ${err.message}`);
+      }
+    }
+  }
+);
+
+export const loadDailyEODData = onSchedule(
+  {
+    schedule: 'every 24 hours',
+    region: 'us-central1',
+    timeZone: 'America/New_York'
+  },
+  async (event) => {
+    const date = new Date().toISOString().split('T')[0];
+    const tickers = ['GOOG', 'ABBV'];
+
+    for (const ticker of tickers) {
+      try {
+        await loadDataForTicker(ticker, date, date);
+      } catch (error) {
+        logger.error(`Error in loadDailyEODData for ${ticker}: ${error.message}`, { error: error });
+      }
+    }
+    logger.info(`loadDailyEODData completed for tickers: ${tickers.join(', ')}`);
+    return null;
+  }
+);
+
+export const loadHistoricalData = onRequest(
+  {
+    region: 'us-central1',
+    timeoutSeconds: 540,
+    memory: '1GB'
+  },
+  (req, res) => {
+    corsHandler(req, res, async () => {
+      if (req.method === 'OPTIONS') {
+        logger.info('[loadHistoricalData] Handling OPTIONS request');
+        return res.status(204).send('');
+      }
+
+      const { ticker } = req.body || {};
+      if (!ticker || typeof ticker !== 'string') {
+        logger.error('Invalid or missing ticker in request body', { body: req.body });
+        return res.status(400).send('Invalid or missing ticker');
+      }
+
+      try {
+        const endDate = new Date().toISOString().split('T')[0];
+        const startDate = unpack('node-fetch');
+import { BigQuery } from '@google-cloud/bigquery';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import cors from 'cors';
+import os from 'os';
+import { defineSecret } from 'firebase-functions/params';
+const TIINGO_API_KEY = defineSecret('TIINGO_API_KEY');
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const bigquery = new BigQuery();
+initializeApp();
+
+const corsHandler = cors({
+  origin: ['https://www.swingtrader.co.uk'],
+  methods: ['POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+});
+
+async function loadDataForTicker(ticker, startDate, endDate) {
+  const apiKey = TIINGO_API_KEY.value();
+  if (!apiKey) {
+    logger.error('[Tiingo] API key missing from Firebase Secrets');
+    throw new Error('Tiingo API key not configured');
+  }
+  logger.info(`[Tiingo] API key presence: ✅ Present`);
+
+  const url = `https://api.tiingo.com/tiingo/daily/${ticker}/prices?startDate=${startDate}&endDate=${endDate}&token=${apiKey}`;
+  logger.info(`[Tiingo] Historical fetch URL for ${ticker}: ${url}`);
+
+  let response;
+  try {
+    response = await fetch(url);
+    logger.info(`[Tiingo] Response status for ${ticker}: ${response.status}`);
+  } catch (fetchErr) {
+    logger.error(`[Tiingo] Fetch failed for ${ticker}: ${fetchErr.message}`, { error: fetchErr });
+    throw new Error('Failed to reach Tiingo API');
+  }
+
+  let rawText;
+  try {
+    rawText = await response.text();
+    logger.info(`[Tiingo] Raw response text for ${ticker}: ${rawText}`);
+  } catch (textErr) {
+    logger.error(`[Tiingo] Failed to read response text for ${ticker}: ${textErr.message}`, { error: textErr });
+    throw new Error('Failed to read Tiingo response body');
+  }
+
+  let data;
+  try {
+    data = JSON.parse(rawText);
+    logger.info(`[Tiingo] Parsed JSON for ${ticker}: ${JSON.stringify(data)}`);
+  } catch (jsonErr) {
+    logger.error(`[Tiingo] JSON parse failed for ${ticker}: ${jsonErr.message}`, { error: jsonErr });
+    throw new Error('Failed to parse Tiingo response');
+  }
+
+  if (!Array.isArray(data) || data.length === 0) {
+    throw new Error('No data returned from Tiingo');
+  }
+
+  const rows = data.map(item => ({
+    ticker_symbol: ticker,
+    date: item.date.split('T')[0],
+    close: item.close,
+    high: item.high,
+    low: item.low,
+    open: item.open,
+    volume: item.volume
+  }));
+
+  const datasetId = 'swing_trader_data';
+  const tableId = 'ticker_history';
+  const tempFilePath = path.join(os.tmpdir(), `ticker_data_${ticker}_${Date.now()}.json`);
+  let rowsInserted;
+
+  try {
+    const jsonLines = rows.map(row => JSON.stringify(row)).join('\n');
+    await writeFile(tempFilePath, jsonLines);
+    logger.info(`[BigQuery] Wrote ${rows.length} rows to temporary file: ${tempFilePath}`);
+
+    await bigquery
+      .dataset(datasetId)
+      .table(tableId)
+      .load(tempFilePath, {
+        sourceFormat: 'NEWLINE_DELIMITED_JSON',
+        writeDisposition: 'WRITE_APPEND'
+      });
+    logger.info(`[BigQuery] Loaded ${rows.length} rows for ${ticker} into BigQuery`);
+    rowsInserted = rows.length;
+  } catch (bigQueryErr) {
+    logger.error(`[BigQuery] Failed to load rows for ${ticker}: ${bigQueryErr.message}`, { error: bigQueryErr, rows });
+    throw new Error(`Failed to load into BigQuery: ${bigQueryErr.message}`);
+  } finally {
+    try {
+      await unlink(tempFilePath);
+      logger.info(`[BigQuery] Cleaned up temporary file: ${tempFilePath}`);
+    } catch (unlinkErr) {
+      logger.warn(`[BigQuery] Failed to clean up temporary file: ${unlinkErr.message}`, { error: unlinkErr });
+    }
+  }
+
+  return rowsInserted;
+}
+
+export const fetchTiingo = onCall(
+  {
+    region: 'us-central1',
+    secrets: ['TIINGO_API_KEY']
+  },
+  async (request) => {
+    const { ticker, type } = request.data;
+    const apiKey = TIINGO_API_KEY.value();
+    if (!apiKey) {
+      logger.error('[Tiingo] API key missing from Firebase Secrets');
+      throw new Error('Tiingo API key not configured');
+    }
+    logger.info(`[Tiingo] Runtime key: ✅ Present`);
+
+    if (!ticker || typeof ticker !== 'string') {
+      throw new Error('Ticker is required and must be a string.');
+    }
+
+    if (type === 'historical') {
+      try {
+        const endDate = new Date().toISOString().split('T')[0];
+        const startDate = new Date();
+        startDate.setFullYear(startDate.getFullYear() - 10);
+        const formattedStartDate = startDate.toISOString().split('T')[0];
+
+        logger.info(`[Tiingo] Fetching historical data for ${ticker} from ${formattedStartDate} to ${endDate}`);
+        const rowsInserted = await loadDataForTicker(ticker, formattedStartDate, endDate);
+        return { success: true, message: `Successfully inserted ${rowsInserted} rows for ${ticker}` };
+      } catch (error) {
+        logger.error(`[Tiingo] Historical fetch failed for ${ticker}: ${error.message}`, { error });
         throw new Error(`Failed to fetch historical data: ${error.message}`);
       }
     } else {
@@ -266,10 +480,6 @@ export const protectedPage = onRequest(
     }
   }
 );
-
   
 
-  
-
-     
-   
+ 
