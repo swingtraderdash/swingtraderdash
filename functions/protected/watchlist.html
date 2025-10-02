@@ -112,6 +112,7 @@
       <p>&copy; 2025 SwingTrader. All rights reserved.</p>
     </div>
   </footer>
+ 
 
   <div id="modal-container" style="display:none;"></div>
   <script type="module">
@@ -176,6 +177,57 @@
     function hideLoadingMessage() {
       const modalContainer = document.getElementById('modal-container');
       modalContainer.style.display = 'none';
+    }
+
+    async function displayWatchlist() {
+      console.log("📋 displayWatchlist() fired");
+      const tickerList = document.getElementById('ticker-list');
+      if (!tickerList) return;
+
+      const watchlist = await getWatchlist();
+      console.log("📋 Watchlist loaded:", watchlist);
+
+      if (!watchlist || watchlist.length === 0) {
+        tickerList.innerHTML = '<p>No tickers yet. Add some using the form above.</p>';
+        return;
+      }
+
+      const sortedTickers = [...watchlist].sort();
+      const cached = JSON.parse(localStorage.getItem('tickerMetadata') || '{}');
+      console.log("📋 Cached metadata:", cached);
+
+      const entries = await Promise.all(sortedTickers.map(async (ticker) => {
+        if (cached[ticker]) {
+          return { symbol: ticker, name: cached[ticker].name || "Unknown" };
+        }
+        try {
+          const docRef = doc(db, 'tickers', ticker);
+          const snapshot = await getDoc(docRef);
+          const data = snapshot.exists() ? snapshot.data() : {};
+          console.log(`📡 Firestore metadata for ${ticker}:`, data);
+          const entry = { symbol: ticker, name: data.name || "⚠️ Metadata not found" };
+          cached[ticker] = entry;
+          localStorage.setItem('tickerMetadata', JSON.stringify(cached));
+          return entry;
+        } catch (error) {
+          console.warn(`⚠️ Firestore read failed for ${ticker}:`, error.message);
+          return { symbol: ticker, name: "⚠️ Error reading metadata" };
+        }
+      }));
+
+      const tickerHTML = entries.map(entry => `
+        <div class="ticker-entry">
+          <strong>${entry.symbol}</strong> – ${entry.name}
+          <span class="ticker-remove" onclick="confirmDelete('${entry.symbol}')">×</span>
+        </div>
+      `).join('');
+
+      tickerList.innerHTML = `
+        <div class="ticker-count">
+          <p>Total tickers: ${sortedTickers.length}</p>
+        </div>
+        ${tickerHTML}
+      `;
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
