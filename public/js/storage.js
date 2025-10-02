@@ -38,18 +38,19 @@ export async function fetchMetadataForTickers(tickersToFetch) {
     for (const ticker of tickersToFetch) {
       console.log(`[storage] 🔍 Checking metadata for ${ticker}`);
 
-      // First, check if already exists in Firestore
       const tickerDocRef = doc(db, 'tickers', ticker);
       const existingSnap = await getDoc(tickerDocRef);
       if (existingSnap.exists()) {
         console.log(`[storage] ✅ Metadata already exists for ${ticker}—skipping API`);
-        continue;  // Skip API if present
+        continue;
       }
 
-      // Only fetch if missing
       try {
         const result = await fetchTiingo({ ticker });
-        const data = result.data;
+        const raw = result.data;
+        const data = raw.data || raw;
+
+        console.log(`[storage] 📦 Tiingo raw result for ${ticker}:`, data);
 
         if (!data || !data.ticker || !data.name) {
           throw new Error("Missing expected Tiingo fields");
@@ -85,7 +86,6 @@ export async function fetchHistoricalDataForTickers(tickersToFetch) {
       const ticker = tickersToFetch[i];
       console.log(`[storage] 🔍 Checking historical data for ${ticker}`);
 
-      // Check if historical data already exists in Firestore (using a flag)
       const tickerDocRef = doc(db, 'historical', ticker);
       const existingSnap = await getDoc(tickerDocRef);
       if (existingSnap.exists()) {
@@ -94,16 +94,17 @@ export async function fetchHistoricalDataForTickers(tickersToFetch) {
         continue;
       }
 
-      // Fetch historical data if missing
       try {
         const result = await fetchTiingo({ ticker, type: 'historical' });
-        const data = result.data;
+        const raw = result.data;
+        const data = raw.data || raw;
+
+        console.log(`[storage] 📦 Tiingo historical result for ${ticker}:`, data);
 
         if (!data || !data.success) {
           throw new Error(data?.error || 'Invalid historical data response');
         }
 
-        // Mark as fetched in Firestore to avoid re-fetching
         await setDoc(tickerDocRef, { fetched: true }, { merge: true });
         console.log(`[storage] 📈 Fetched and cached historical data for ${ticker}`);
         results.push({ ticker, success: true, message: 'Historical data loaded successfully' });
@@ -112,7 +113,6 @@ export async function fetchHistoricalDataForTickers(tickersToFetch) {
         results.push({ ticker, success: false, error: error.message });
       }
 
-      // Respect rate limits with delay (mimics watchlist.html)
       if (i < tickersToFetch.length - 1) {
         await new Promise(resolve => setTimeout(resolve, 1200));
       }
@@ -145,3 +145,7 @@ export async function getWatchlist() {
     return [];
   }
 }
+
+     
+     
+  
