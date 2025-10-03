@@ -113,7 +113,6 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
   return rowsInserted;
 }
-
 export const fetchTiingo = onCall(
   {
     region: 'us-central1',
@@ -175,6 +174,7 @@ export const fetchTiingo = onCall(
     }
   }
 );
+
 export const loadDailyEODData = onSchedule(
   {
     schedule: 'every 24 hours',
@@ -197,6 +197,63 @@ export const loadDailyEODData = onSchedule(
 
     logger.info(`loadDailyEODData completed for tickers: ${tickers.join(', ')}`);
     return null;
+  }
+);
+
+export const triggerDailyEOD = onRequest(
+  {
+    region: 'us-central1',
+    timeoutSeconds: 540,
+    memory: '1GB'
+  },
+  async (req, res) => {
+    const date = new Date().toISOString().split('T')[0];
+    const firestore = getFirestore();
+    const snapshot = await firestore.collection('tickers').get();
+    const tickers = snapshot.docs.map(doc => doc.id);
+
+    const chunkSize = 50;
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const chunkArray = (arr, size) =>
+      Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
+        arr.slice(i * size, i * size + size)
+      );
+
+    const results = [];
+    const chunks = chunkArray(tickers, chunkSize);
+
+    for (const [i, chunk] of chunks.entries()) {
+      logger.info(`🧠 Starting batch ${i + 1}/${chunks.length} with ${chunk.length} tickers`);
+
+      const batchResults = await Promise.allSettled(
+        chunk.map(async ticker => {
+          try {
+            const rowsInserted = await loadDataForTicker(ticker, date, date);
+            logger.info(`✅ ${ticker}: ${rowsInserted} rows inserted`);
+            return { ticker, success: true, rowsInserted };
+          } catch (err) {
+            logger.error(`❌ ${ticker}: ${err.message}`, { error: err });
+            return { ticker, success: false, error: err.message };
+          }
+        })
+      );
+
+      results.push(...batchResults.map(r => r.value || r.reason));
+      await sleep(60000); // Wait 60s between batches
+    }
+
+    const successCount = results.filter(r => r.success).length;
+    const failureCount = results.length - successCount;
+
+    logger.info(`📊 EOD ingest complete: ${successCount} succeeded, ${failureCount} failed`);
+
+    res.status(200).json({
+      date,
+      total: results.length,
+      success: successCount,
+      failure: failureCount,
+      details: results
+    });
   }
 );
 
@@ -271,6 +328,7 @@ export const protectedPage = onRequest(
     }
   }
 );
+
 
     
 
