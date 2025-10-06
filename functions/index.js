@@ -261,7 +261,8 @@ export const loadHistoricalData = onRequest(
   {
     region: 'us-central1',
     timeoutSeconds: 540,
-    memory: '1GB'
+    memory: '1GB',
+    secrets: ['TIINGO_API_KEY']
   },
   (req, res) => {
     corsHandler(req, res, async () => {
