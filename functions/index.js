@@ -175,32 +175,6 @@ export const fetchTiingo = onCall(
   }
 );
 
-export const loadDailyEODData = onSchedule(
-  {
-    schedule: 'every 24 hours',
-    region: 'us-central1',
-    timeZone: 'America/New_York',
-    secrets: ['TIINGO_API_KEY']
-  },
-  async (event) => {
-    const date = new Date().toISOString().split('T')[0];
-
-    const snapshot = await getFirestore().collection('tickers').get();
-    const tickers = snapshot.docs.map(doc => doc.id);
-
-    for (const ticker of tickers) {
-      try {
-        await loadDataForTicker(ticker, date, date);
-      } catch (error) {
-        logger.error(`Error in loadDailyEODData for ${ticker}: ${error.message}`, { error: error });
-      }
-    }
-
-    logger.info(`loadDailyEODData completed for tickers: ${tickers.join(', ')}`);
-    return null;
-  }
-);
-
 export const triggerDailyEOD = onRequest(
   {
     region: 'us-central1',
