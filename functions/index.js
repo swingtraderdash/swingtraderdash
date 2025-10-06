@@ -179,7 +179,8 @@ export const loadDailyEODData = onSchedule(
   {
     schedule: 'every 24 hours',
     region: 'us-central1',
-    timeZone: 'America/New_York'
+    timeZone: 'America/New_York',
+    secrets: ['TIINGO_API_KEY']
   },
   async (event) => {
     const date = new Date().toISOString().split('T')[0];
@@ -204,7 +205,8 @@ export const triggerDailyEOD = onRequest(
   {
     region: 'us-central1',
     timeoutSeconds: 540,
-    memory: '1GB'
+    memory: '1GB',
+    secrets: ['TIINGO_API_KEY']
   },
   async (req, res) => {
     const date = new Date().toISOString().split('T')[0];
@@ -329,12 +331,3 @@ export const protectedPage = onRequest(
     }
   }
 );
-
-
-    
-
- 
-   
-       
-  
-   
