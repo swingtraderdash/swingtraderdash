@@ -173,6 +173,17 @@
       modalContainer.style.display = 'block';
     }
 
+    function showMetadataLoadingMessage() {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="modal">
+          <div class="spinner"></div>
+          <p>Awaiting Metadata...</p>
+        </div>
+      `;
+      modalContainer.style.display = 'block';
+    }
+
     function hideLoadingMessage() {
       const modalContainer = document.getElementById('modal-container');
       modalContainer.style.display = 'none';
@@ -221,12 +232,20 @@
               const saveSuccess = await saveWatchlist(updatedWatchlist);
               if (saveSuccess) {
                 let fetchSuccess = true;
-                for (let i = 0; i < newTickers.length; i++) {
-                  const batch = newTickers.slice(i, i + 1);
-                  fetchSuccess = await fetchMetadataForTickers(batch) && fetchSuccess;
-                  if (i < newTickers.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1200));
+                showMetadataLoadingMessage(); // Show spinner for metadata fetch
+                try {
+                  for (let i = 0; i < newTickers.length; i++) {
+                    const batch = newTickers.slice(i, i + 1);
+                    fetchSuccess = await fetchMetadataForTickers(batch) && fetchSuccess;
+                    if (i < newTickers.length - 1) {
+                      await new Promise(resolve => setTimeout(resolve, 1200));
+                    }
                   }
+                } catch (error) {
+                  console.error(`❌ Error fetching metadata: ${error.message}`);
+                  fetchSuccess = false;
+                } finally {
+                  hideLoadingMessage(); // Hide spinner
                 }
                 if (fetchSuccess) {
                   showModal(`Would you like to collect historical data for ${newTickers.join(', ')}?`, async () => {
@@ -353,15 +372,4 @@
     };
   </script>
 </body>
-</html>  
-                 
-   
-     
-
-     
-         
-     
-  
-          
-             
-       
+</html>
