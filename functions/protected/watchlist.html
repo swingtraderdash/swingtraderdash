@@ -223,65 +223,65 @@
                     await new Promise(resolve => setTimeout(resolve, 1200));
                   }
                 }
-                if (fetchSuccess) {
-                  showModal(`Would you like to collect historical data for ${newTickers.join(', ')}?`, async () => {
-                    try {
-                      const results = [];
-                      for (let i = 0; i < newTickers.length; i++) {
-                        const ticker = newTickers[i];
-                        showLoadingMessage(ticker);
-                        console.log(`📡 Sending historical data request for ${ticker} to Cloud Run`);
-                        try {
-                          const response = await fetch('https://loadhistoricaldata-27892139023.us-central1.run.app', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ ticker: ticker })
-                          });
-                          const responseText = await response.text();
-                          hideLoadingMessage();
-                          if (!response.ok) {
-                            console.error(`❌ Historical load failed for ${ticker}: ${response.status} ${responseText}`);
-                            results.push(`🚫 ${ticker}: Failed to load historical data: ${responseText}`);
-                          } else {
-                            console.log(`✅ Historical data fetched for ${ticker}: ${responseText}`);
-                            results.push(`✅ ${ticker}: ${responseText}`);
-                          }
-                        } catch (error) {
-                          hideLoadingMessage();
-                          console.error(`❌ Error fetching historical data for ${ticker}: ${error.message}`);
-                          results.push(`🚫 ${ticker}: Error: ${error.message}`);
-                        }
-                        if (i < newTickers.length - 1) {
-                          await new Promise(resolve => setTimeout(resolve, 1200));
-                        }
-                      }
-                      showPersistentMessage(results.join('\n'));
-                    } catch (error) {
-                      hideLoadingMessage();
-                      console.error(`❌ Unexpected error: ${error.message}`);
-                      showPersistentMessage(`🚫 Unexpected error: ${error.message}`);
-                    }
-                  }, () => {
-                    console.log("❌ Historical fetch cancelled.");
-                    hideLoadingMessage();
-                  });
-                } else {
-                  showPersistentMessage(`✅ Added tickers, but metadata fetch failed for some.`);
-                }
-                await displayWatchlist();
-              } else {
-                showPersistentMessage('🚫 Failed to add tickers.');
-              }
-            } else {
-              showPersistentMessage('No new tickers to add.');
-            }
-            tickerInput.value = '';
-          }, () => {
-            console.log("❌ User cancelled.");
+               if (fetchSuccess) {
+  showModal(`Would you like to collect historical data for ${newTickers.join(', ')}?`, async () => {
+    try {
+      const results = [];
+      for (let i = 0; i < newTickers.length; i++) {
+        const ticker = newTickers[i];
+        showLoadingMessage(ticker);
+        console.log(`📡 Sending historical data request for ${ticker} to Cloud Run`);
+        try {
+          const response = await fetch('https://loadhistoricaldata-27892139023.us-central1.run.app', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ticker: ticker })
           });
-        });
+          const responseText = await response.text();
+          hideLoadingMessage();
+          if (!response.ok) {
+            console.error(`❌ Historical load failed for ${ticker}: ${response.status} ${responseText}`);
+            results.push(`🚫 ${ticker}: Failed to load historical data: ${responseText}`);
+          } else {
+            console.log(`✅ Historical data fetched for ${ticker}: ${responseText}`);
+            results.push(`✅ ${ticker}: ${responseText}`);
+          }
+        } catch (error) {
+          hideLoadingMessage();
+          console.error(`❌ Error fetching historical data for ${ticker}: ${error.message}`);
+          results.push(`🚫 ${ticker}: Error: ${error.message}`);
+        }
+        if (i < newTickers.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1200));
+        }
       }
-    });
+      showPersistentMessage(results.join('\n'));
+    } catch (error) {
+      hideLoadingMessage();
+      console.error(`❌ Unexpected error: ${error.message}`);
+      showPersistentMessage(`🚫 Unexpected error: ${error.message}`);
+    }
+  }, () => {
+    console.log("❌ Historical fetch cancelled.");
+    hideLoadingMessage();
+  });
+} else {
+  showPersistentMessage(`✅ Added tickers, but metadata fetch failed for some.`);
+}
+await displayWatchlist();
+} else {
+  showPersistentMessage('🚫 Failed to add tickers.');
+}
+} else {
+  showPersistentMessage('No new tickers to add.');
+}
+tickerInput.value = '';
+}, () => {
+  console.log("❌ User cancelled.");
+});
+});
+}
+
 async function displayWatchlist() {
   console.log("📋 displayWatchlist() fired");
   const tickerList = document.getElementById('ticker-list');
@@ -322,10 +322,26 @@ async function displayWatchlist() {
     </div>
   `).join('');
 
-   tickerList.innerHTML = `
+  tickerList.innerHTML = `
     <div class="ticker-count">
       <p>Total tickers: ${sortedTickers.length}</p>
     </div>
     ${tickerHTML}
   `;
 }
+
+window.confirmDelete = function(ticker) {
+  showModal(`You're about to remove ${ticker} from your watchlist.\nAre you sure you want to proceed?`, async () => {
+    const currentWatchlist = await getWatchlist();
+    const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
+    const success = await saveWatchlist(updatedWatchlist);
+    if (success) {
+      showPersistentMessage(`✅ ${ticker} successfully deleted from your watchlist`);
+      await displayWatchlist();
+    } else {
+      showPersistentMessage(`🚫 Failed to delete ${ticker}. Please try again.`);
+    }
+  }, () => {
+    console.log("❌ Delete cancelled.");
+  });
+};
