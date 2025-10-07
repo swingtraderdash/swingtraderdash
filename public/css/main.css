@@ -130,13 +130,32 @@ form button {
   width: 200px;
 }
 
-/* ─── Watchlist Layout ─── */
-#ticker-count {
-  text-align: center;
+/* ─── Button Style ─── */
+.btn {
+  display: inline-block;
+  background-color: #2980b9;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  text-decoration: none;
   font-weight: bold;
-  margin: 1em 0;
+}
+
+.btn:hover {
+  background-color: #3498db;
+}
+
+/* ─── Watchlist Layout ─── */
+#ticker-count.btn {
+  display: inline-block;
+  background-color: #2980b9;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-weight: bold;
   font-size: 1.1em;
-  color: #444;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
 #ticker-list {
@@ -159,10 +178,12 @@ form button {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   font-weight: 500;
   transition: transform 0.2s ease;
-  text-align: centre;
+  text-align: center;
 }
 
 .ticker-entry:hover {
   transform: scale(1.02);
   background-color: #d0e7ff;
 }
+
+ 
