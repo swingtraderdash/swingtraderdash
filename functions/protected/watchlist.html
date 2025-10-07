@@ -322,31 +322,10 @@ async function displayWatchlist() {
     </div>
   `).join('');
 
-  // ✅ Counter logic preserved for reuse, but not injected here
-  const tickerCount = sortedTickers.length;
-  console.log(`📊 Total tickers: ${tickerCount}`);
-
-  // ✅ Only render tickers—no counter injected into DOM
-  tickerList.innerHTML = tickerHTML;
+   tickerList.innerHTML = `
+    <div class="ticker-count">
+      <p>Total tickers: ${sortedTickers.length}</p>
+    </div>
+    ${tickerHTML}
+  `;
 }
-
-    
-                 
-   
-     
-
-     
-         
-     
-  
-          
-             
-       
-
-    
-   
-
-    
-      
-                  
-      
