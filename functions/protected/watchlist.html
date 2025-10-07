@@ -105,7 +105,6 @@
         </div>
 
         <div class="watchlist-display">
-          <div id="ticker-count" class="ticker-count">Total tickers: 0</div>
           <div id="ticker-list">
             <!-- Tickers will be displayed here -->
           </div>
@@ -219,6 +218,7 @@
           } else {
             message = `All entered tickers are already in your watchlist: ${alreadyInWatchlist.join(', ')}.`;
           }
+
 
 
           showModal(message, async () => {
