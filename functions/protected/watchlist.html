@@ -27,7 +27,7 @@
       background: white;
       border: 1px solid #ccc;
       padding: 20px;
-      z-index: 2000; /* Increased z-index */
+      z-index: 3000 !important; /* Increased z-index */
       box-shadow: 0 0 10px rgba(0,0,0,0.3);
       text-align: center;
     }
@@ -69,6 +69,12 @@
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+    #modal-container {
+      display: none !important;
+    }
+    #modal-container.show {
+      display: block !important;
     }
   </style>
   <script type="module" src="/js/firebaseConfig.js" defer></script>
@@ -131,13 +137,12 @@
       const modalContainer = document.getElementById('modal-container');
       if (!modalContainer) {
         console.error("❌ Modal container not found!");
-        // Fallback: recreate modal-container
         const newContainer = document.createElement('div');
         newContainer.id = 'modal-container';
         newContainer.style.display = 'none';
         document.body.appendChild(newContainer);
         console.log("📸 Created new modal-container");
-        return showModal(message, onConfirm, onCancel); // Retry
+        return showModal(message, onConfirm, onCancel);
       }
       modalContainer.innerHTML = `
         <div class="modal">
@@ -146,8 +151,8 @@
           <button id="cancel-btn">Cancel</button>
         </div>
       `;
-      modalContainer.style.display = 'block';
-      console.log("📸 Modal container display set to block");
+      modalContainer.classList.add('show');
+      console.log("📸 Modal container class set to show");
 
       const confirmBtn = document.getElementById('confirm-btn');
       const cancelBtn = document.getElementById('cancel-btn');
@@ -155,18 +160,21 @@
         console.error("❌ Confirm or Cancel button not found!");
         return;
       }
-      confirmBtn.onclick = () => {
+      confirmBtn.addEventListener('click', () => {
         console.log("✅ Confirm button clicked");
-        modalContainer.style.display = 'none';
-        console.log("📸 Modal container hidden for confirm");
-        if (onConfirm) onConfirm();
-      };
-      cancelBtn.onclick = () => {
+        modalContainer.classList.remove('show');
+        console.log("📸 Modal container class removed for confirm");
+        if (onConfirm) {
+          console.log("📸 Calling onConfirm");
+          onConfirm();
+        }
+      }, { once: true });
+      cancelBtn.addEventListener('click', () => {
         console.log("❌ Cancel button clicked");
-        modalContainer.style.display = 'none';
-        console.log("📸 Modal container hidden for cancel");
+        modalContainer.classList.remove('show');
+        console.log("📸 Modal container class removed for cancel");
         if (onCancel) onCancel();
-      };
+      }, { once: true });
     }
 
     function showPersistentMessage(message) {
@@ -182,18 +190,18 @@
           <button id="ok-btn" class="btn btn-primary">OK</button>
         </div>
       `;
-      modalContainer.style.display = 'block';
-      console.log("📸 Persistent message container display set to block");
+      modalContainer.classList.add('show');
+      console.log("📸 Persistent message container class set to show");
 
       const okBtn = document.getElementById('ok-btn');
       if (!okBtn) {
         console.error("❌ OK button not found!");
         return;
       }
-      okBtn.onclick = () => {
+      okBtn.addEventListener('click', () => {
         console.log("✅ OK button clicked");
-        modalContainer.style.display = 'none';
-      };
+        modalContainer.classList.remove('show');
+      }, { once: true });
     }
 
     function showLoadingMessage(ticker) {
@@ -209,8 +217,8 @@
           <p>Loading historical data for ${ticker}...</p>
         </div>
       `;
-      modalContainer.style.display = 'block';
-      console.log("📸 Historical spinner container display set to block");
+      modalContainer.classList.add('show');
+      console.log("📸 Historical spinner container class set to show");
     }
 
     function showMetadataLoadingMessage() {
@@ -218,13 +226,12 @@
       const modalContainer = document.getElementById('modal-container');
       if (!modalContainer) {
         console.error("❌ Modal container not found!");
-        // Fallback: recreate modal-container
         const newContainer = document.createElement('div');
         newContainer.id = 'modal-container';
         newContainer.style.display = 'none';
         document.body.appendChild(newContainer);
         console.log("📸 Created new modal-container");
-        return showMetadataLoadingMessage(); // Retry
+        return showMetadataLoadingMessage();
       }
       modalContainer.innerHTML = `
         <div class="modal">
@@ -232,10 +239,9 @@
           <p>Awaiting Metadata...</p>
         </div>
       `;
-      modalContainer.style.display = 'block';
-      console.log("📸 Metadata spinner container display set to block");
-      // Force DOM update
-      modalContainer.offsetHeight; // Trigger reflow
+      modalContainer.classList.add('show');
+      console.log("📸 Metadata spinner container class set to show");
+      modalContainer.offsetHeight; // Force reflow
       console.log("📸 Forced DOM reflow for metadata spinner");
     }
 
@@ -246,8 +252,8 @@
         console.error("❌ Modal container not found!");
         return;
       }
-      modalContainer.style.display = 'none';
-      console.log("📸 Loading spinner hidden");
+      modalContainer.classList.remove('show');
+      console.log("📸 Loading spinner class removed");
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -260,7 +266,6 @@
 
       if (!modalContainer) {
         console.error("❌ Modal container not found in DOM!");
-        // Create fallback modal-container
         const newContainer = document.createElement('div');
         newContainer.id = 'modal-container';
         newContainer.style.display = 'none';
@@ -303,9 +308,11 @@
           showModal(message, async () => {
             console.log("✅ Entering onConfirm callback");
             try {
-              showMetadataLoadingMessage(); // Show spinner
+              console.log("📸 About to show metadata spinner");
+              showMetadataLoadingMessage();
               console.log("📸 Called showMetadataLoadingMessage");
               const minSpinnerDuration = new Promise(resolve => setTimeout(resolve, 500));
+              console.log("📸 Started minSpinnerDuration");
               if (newTickers.length > 0) {
                 console.log("📸 Saving watchlist");
                 const currentWatchlist = await getWatchlist();
@@ -330,8 +337,9 @@
                     fetchSuccess = false;
                   }
                   console.log("📸 Metadata fetch completed, success:", fetchSuccess);
-                  await minSpinnerDuration; // Ensure spinner shows for at least 500ms
-                  hideLoadingMessage(); // Hide spinner
+                  await minSpinnerDuration;
+                  console.log("📸 minSpinnerDuration completed");
+                  hideLoadingMessage();
                   console.log("📸 Called hideLoadingMessage");
                   if (fetchSuccess) {
                     console.log("📸 Showing historical data modal");
@@ -441,9 +449,33 @@
 
       tickerList.innerHTML = `
         <div class="ticker-count">
-          <p>Total tickers: ${sortedTickers.length}</p
+          <p>Total tickers: ${sortedTickers.length}</p>
+        </div>
+        ${tickerHTML}
+      `;
+    }
+
+    window.confirmDelete = function(ticker) {
+      showModal(`You're about to remove ${ticker} from your watchlist.\nAre you sure you want to proceed?`, async () => {
+        const currentWatchlist = await getWatchlist();
+        const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
+        const success = await saveWatchlist(updatedWatchlist);
+        if (success) {
+          showPersistentMessage(`✅ ${ticker} successfully deleted from your watchlist`);
+          await displayWatchlist();
+        } else {
+          showPersistentMessage(`🚫 Failed to delete ${ticker}. Please try again.`);
+        }
+      }, () => {
+        console.log("❌ Delete cancelled.");
+      });
+    };
+  </script>
+</body>
+</html>
+
      
-       
         
-                     
-     
+         
+          
+                   
