@@ -209,6 +209,23 @@
       console.log("📸 Historical spinner container display set to block");
     }
 
+    function showMetadataLoadingMessage() {
+      console.log("📸 Showing metadata loading spinner");
+      const modalContainer = document.getElementById('modal-container');
+      if (!modalContainer) {
+        console.error("❌ Modal container not found!");
+        return;
+      }
+      modalContainer.innerHTML = `
+        <div class="modal">
+          <div class="spinner"></div>
+          <p>Awaiting Metadata...</p>
+        </div>
+      `;
+      modalContainer.style.display = 'block';
+      console.log("📸 Metadata spinner container display set to block");
+    }
+
     function hideLoadingMessage() {
       console.log("📸 Hiding loading spinner");
       const modalContainer = document.getElementById('modal-container');
@@ -260,6 +277,8 @@
 
           showModal(message, async () => {
             console.log("✅ Entering onConfirm callback");
+            showMetadataLoadingMessage();
+            const minSpinnerDuration = new Promise(resolve => setTimeout(resolve, 500));
             console.log("✅ User confirmed. Adding new tickers...");
             if (newTickers.length > 0) {
               console.log("📸 Saving watchlist");
@@ -285,6 +304,8 @@
                   fetchSuccess = false;
                 }
                 console.log("📸 Metadata fetch completed, success:", fetchSuccess);
+                await minSpinnerDuration;
+                hideLoadingMessage();
                 if (fetchSuccess) {
                   console.log("📸 Showing historical data modal");
                   showModal(`Would you like to collect historical data for ${newTickers.join(', ')}?`, async () => {
@@ -412,10 +433,4 @@
   </script>
 </body>
 </html>
-  
-        
-  
-
-         
-                        
-      
+              
