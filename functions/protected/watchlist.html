@@ -127,6 +127,7 @@
     const db = getFirestore(app);
 
     function showModal(message, onConfirm, onCancel) {
+      console.log("📸 Showing modal with message:", message);
       const modalContainer = document.getElementById('modal-container');
       modalContainer.innerHTML = `
         <div class="modal">
@@ -138,16 +139,19 @@
       modalContainer.style.display = 'block';
 
       document.getElementById('confirm-btn').onclick = () => {
+        console.log("✅ Confirm button clicked");
         modalContainer.style.display = 'none';
         if (onConfirm) onConfirm();
       };
       document.getElementById('cancel-btn').onclick = () => {
+        console.log("❌ Cancel button clicked");
         modalContainer.style.display = 'none';
         if (onCancel) onCancel();
       };
     }
 
     function showPersistentMessage(message) {
+      console.log("📸 Showing persistent message:", message);
       const modalContainer = document.getElementById('modal-container');
       modalContainer.innerHTML = `
         <div class="modal">
@@ -158,11 +162,13 @@
       modalContainer.style.display = 'block';
 
       document.getElementById('ok-btn').onclick = () => {
+        console.log("✅ OK button clicked");
         modalContainer.style.display = 'none';
       };
     }
 
     function showLoadingMessage(ticker) {
+      console.log(`📸 Showing loading spinner for historical data: ${ticker}`);
       const modalContainer = document.getElementById('modal-container');
       modalContainer.innerHTML = `
         <div class="modal">
@@ -174,6 +180,7 @@
     }
 
     function showMetadataLoadingMessage() {
+      console.log("📸 Showing metadata loading spinner");
       const modalContainer = document.getElementById('modal-container');
       modalContainer.innerHTML = `
         <div class="modal">
@@ -185,6 +192,7 @@
     }
 
     function hideLoadingMessage() {
+      console.log("📸 Hiding loading spinner");
       const modalContainer = document.getElementById('modal-container');
       modalContainer.style.display = 'none';
     }
@@ -227,6 +235,8 @@
           showModal(message, async () => {
             console.log("✅ User confirmed. Adding new tickers...");
             showMetadataLoadingMessage(); // Show spinner when Confirm is clicked
+            // Ensure minimum spinner duration for visibility
+            const minSpinnerDuration = new Promise(resolve => setTimeout(resolve, 500));
             if (newTickers.length > 0) {
               const currentWatchlist = await getWatchlist();
               const updatedWatchlist = [...currentWatchlist, ...newTickers].sort();
@@ -236,6 +246,7 @@
                 try {
                   for (let i = 0; i < newTickers.length; i++) {
                     const batch = newTickers.slice(i, i + 1);
+                    console.log(`📡 Fetching metadata for batch: ${batch.join(', ')}`);
                     fetchSuccess = await fetchMetadataForTickers(batch) && fetchSuccess;
                     if (i < newTickers.length - 1) {
                       await new Promise(resolve => setTimeout(resolve, 1200));
@@ -245,8 +256,9 @@
                   console.error(`❌ Error fetching metadata: ${error.message}`);
                   fetchSuccess = false;
                 }
+                await minSpinnerDuration; // Ensure spinner shows for at least 500ms
+                hideLoadingMessage(); // Hide spinner before historical data modal
                 if (fetchSuccess) {
-                  hideLoadingMessage(); // Hide spinner before showing historical data modal
                   showModal(`Would you like to collect historical data for ${newTickers.join(', ')}?`, async () => {
                     try {
                       const results = [];
@@ -289,16 +301,13 @@
                     hideLoadingMessage();
                   });
                 } else {
-                  hideLoadingMessage(); // Hide spinner before showing failure message
                   showPersistentMessage(`✅ Added tickers, but metadata fetch failed for some.`);
                 }
                 await displayWatchlist();
               } else {
-                hideLoadingMessage(); // Hide spinner before showing failure message
                 showPersistentMessage('🚫 Failed to add tickers.');
               }
             } else {
-              hideLoadingMessage(); // Hide spinner before showing no-tickers message
               showPersistentMessage('No new tickers to add.');
             }
             tickerInput.value = '';
@@ -375,9 +384,12 @@
   </script>
 </body>
 </html>
-   
+         
+     
+                        
 
     
+     
      
            
      
