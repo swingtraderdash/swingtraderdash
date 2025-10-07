@@ -129,6 +129,10 @@
     function showModal(message, onConfirm, onCancel) {
       console.log("📸 Showing modal with message:", message);
       const modalContainer = document.getElementById('modal-container');
+      if (!modalContainer) {
+        console.error("❌ Modal container not found!");
+        return;
+      }
       modalContainer.innerHTML = `
         <div class="modal">
           <p style="white-space: pre-line;">${message}</p>
@@ -137,13 +141,20 @@
         </div>
       `;
       modalContainer.style.display = 'block';
+      console.log("📸 Modal container display set to block");
 
-      document.getElementById('confirm-btn').onclick = () => {
+      const confirmBtn = document.getElementById('confirm-btn');
+      const cancelBtn = document.getElementById('cancel-btn');
+      if (!confirmBtn || !cancelBtn) {
+        console.error("❌ Confirm or Cancel button not found!");
+        return;
+      }
+      confirmBtn.onclick = () => {
         console.log("✅ Confirm button clicked");
         modalContainer.style.display = 'none';
         if (onConfirm) onConfirm();
       };
-      document.getElementById('cancel-btn').onclick = () => {
+      cancelBtn.onclick = () => {
         console.log("❌ Cancel button clicked");
         modalContainer.style.display = 'none';
         if (onCancel) onCancel();
@@ -153,6 +164,10 @@
     function showPersistentMessage(message) {
       console.log("📸 Showing persistent message:", message);
       const modalContainer = document.getElementById('modal-container');
+      if (!modalContainer) {
+        console.error("❌ Modal container not found!");
+        return;
+      }
       modalContainer.innerHTML = `
         <div class="modal">
           <p style="white-space: pre-line;">${message}</p>
@@ -160,8 +175,14 @@
         </div>
       `;
       modalContainer.style.display = 'block';
+      console.log("📸 Persistent message container display set to block");
 
-      document.getElementById('ok-btn').onclick = () => {
+      const okBtn = document.getElementById('ok-btn');
+      if (!okBtn) {
+        console.error("❌ OK button not found!");
+        return;
+      }
+      okBtn.onclick = () => {
         console.log("✅ OK button clicked");
         modalContainer.style.display = 'none';
       };
@@ -170,6 +191,10 @@
     function showLoadingMessage(ticker) {
       console.log(`📸 Showing loading spinner for historical data: ${ticker}`);
       const modalContainer = document.getElementById('modal-container');
+      if (!modalContainer) {
+        console.error("❌ Modal container not found!");
+        return;
+      }
       modalContainer.innerHTML = `
         <div class="modal">
           <div class="spinner"></div>
@@ -177,11 +202,16 @@
         </div>
       `;
       modalContainer.style.display = 'block';
+      console.log("📸 Historical spinner container display set to block");
     }
 
     function showMetadataLoadingMessage() {
       console.log("📸 Showing metadata loading spinner");
       const modalContainer = document.getElementById('modal-container');
+      if (!modalContainer) {
+        console.error("❌ Modal container not found!");
+        return;
+      }
       modalContainer.innerHTML = `
         <div class="modal">
           <div class="spinner"></div>
@@ -189,19 +219,32 @@
         </div>
       `;
       modalContainer.style.display = 'block';
+      console.log("📸 Metadata spinner container display set to block");
+      // Force DOM update
+      modalContainer.offsetHeight; // Trigger reflow
     }
 
     function hideLoadingMessage() {
       console.log("📸 Hiding loading spinner");
       const modalContainer = document.getElementById('modal-container');
+      if (!modalContainer) {
+        console.error("❌ Modal container not found!");
+        return;
+      }
       modalContainer.style.display = 'none';
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
+      console.log("📸 DOMContentLoaded fired");
       const tickerForm = document.getElementById('ticker-form');
       const tickerInput = document.getElementById('ticker-input');
       const tickerList = document.getElementById('ticker-list');
       const feedback = document.getElementById('feedback');
+      const modalContainer = document.getElementById('modal-container');
+
+      if (!modalContainer) {
+        console.error("❌ Modal container not found in DOM!");
+      }
 
       await displayWatchlist();
 
@@ -209,6 +252,7 @@
         tickerForm.addEventListener('submit', async (event) => {
           event.preventDefault();
           feedback.textContent = '';
+          console.log("📸 Form submitted");
 
           const inputValue = tickerInput.value.trim();
           const validTickerRegex = /^[A-Za-z.]+$/;
@@ -216,12 +260,14 @@
           const invalid = tickers.filter(t => !validTickerRegex.test(t));
           if (invalid.length > 0) {
             feedback.textContent = `🚫 Invalid tickers: ${invalid.join(', ')}. Only letters and full stops are allowed.`;
+            console.log("📸 Invalid tickers:", invalid);
             return;
           }
 
           const existingWatchlist = await getWatchlist();
           const alreadyInWatchlist = tickers.filter(t => existingWatchlist.includes(t));
           const newTickers = tickers.filter(t => !existingWatchlist.includes(t));
+          console.log("📸 New tickers:", newTickers, "Already in watchlist:", alreadyInWatchlist);
 
           let message = '';
           if (alreadyInWatchlist.length > 0 && newTickers.length > 0) {
@@ -233,21 +279,24 @@
           }
 
           showModal(message, async () => {
-            console.log("✅ User confirmed. Adding new tickers...");
-            showMetadataLoadingMessage(); // Show spinner when Confirm is clicked
-            // Ensure minimum spinner duration for visibility
+            console.log("✅ Starting onConfirm callback");
+            showMetadataLoadingMessage(); // Show spinner
             const minSpinnerDuration = new Promise(resolve => setTimeout(resolve, 500));
             if (newTickers.length > 0) {
+              console.log("📸 Saving watchlist");
               const currentWatchlist = await getWatchlist();
               const updatedWatchlist = [...currentWatchlist, ...newTickers].sort();
               const saveSuccess = await saveWatchlist(updatedWatchlist);
+              console.log("📸 Save watchlist success:", saveSuccess);
               if (saveSuccess) {
                 let fetchSuccess = true;
                 try {
                   for (let i = 0; i < newTickers.length; i++) {
                     const batch = newTickers.slice(i, i + 1);
                     console.log(`📡 Fetching metadata for batch: ${batch.join(', ')}`);
-                    fetchSuccess = await fetchMetadataForTickers(batch) && fetchSuccess;
+                    const result = await fetchMetadataForTickers(batch);
+                    console.log(`📸 Metadata fetch result for ${batch.join(', ')}:`, result);
+                    fetchSuccess = result && fetchSuccess;
                     if (i < newTickers.length - 1) {
                       await new Promise(resolve => setTimeout(resolve, 1200));
                     }
@@ -256,9 +305,11 @@
                   console.error(`❌ Error fetching metadata: ${error.message}`);
                   fetchSuccess = false;
                 }
+                console.log("📸 Metadata fetch completed, success:", fetchSuccess);
                 await minSpinnerDuration; // Ensure spinner shows for at least 500ms
-                hideLoadingMessage(); // Hide spinner before historical data modal
+                hideLoadingMessage(); // Hide spinner
                 if (fetchSuccess) {
+                  console.log("📸 Showing historical data modal");
                   showModal(`Would you like to collect historical data for ${newTickers.join(', ')}?`, async () => {
                     try {
                       const results = [];
@@ -384,12 +435,7 @@
   </script>
 </body>
 </html>
-         
-     
-                        
-
     
-     
-     
-           
-     
+       
+          
+      
