@@ -208,9 +208,6 @@
             message = `All entered tickers are already in your watchlist: ${alreadyInWatchlist.join(', ')}.`;
           }
 
-
-
-
           showModal(message, async () => {
             console.log("✅ User confirmed. Adding new tickers...");
             if (newTickers.length > 0) {
