@@ -87,8 +87,8 @@ footer {
 /* 🔷 Buttons */
 .btn {
   display: inline-block;
-  background-color: #2980b9;
-  color: white;
+  background-color: #e0f7ff; /* match ticker-item */
+  color: #333; /* match ticker-symbol */
   padding: 10px 20px;
   border-radius: 5px;
   text-decoration: none;
@@ -96,7 +96,7 @@ footer {
 }
 
 .btn:hover {
-  background-color: #3498db;
+  background-color: #d0e7ff;
 }
 
 /* 🔷 Responsive Tweaks */
