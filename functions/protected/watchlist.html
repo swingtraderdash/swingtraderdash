@@ -27,7 +27,7 @@
       background: white;
       border: 1px solid #ccc;
       padding: 20px;
-      z-index: 1000;
+      z-index: 2000; /* Increased z-index */
       box-shadow: 0 0 10px rgba(0,0,0,0.3);
       text-align: center;
     }
@@ -131,7 +131,13 @@
       const modalContainer = document.getElementById('modal-container');
       if (!modalContainer) {
         console.error("❌ Modal container not found!");
-        return;
+        // Fallback: recreate modal-container
+        const newContainer = document.createElement('div');
+        newContainer.id = 'modal-container';
+        newContainer.style.display = 'none';
+        document.body.appendChild(newContainer);
+        console.log("📸 Created new modal-container");
+        return showModal(message, onConfirm, onCancel); // Retry
       }
       modalContainer.innerHTML = `
         <div class="modal">
@@ -152,11 +158,13 @@
       confirmBtn.onclick = () => {
         console.log("✅ Confirm button clicked");
         modalContainer.style.display = 'none';
+        console.log("📸 Modal container hidden for confirm");
         if (onConfirm) onConfirm();
       };
       cancelBtn.onclick = () => {
         console.log("❌ Cancel button clicked");
         modalContainer.style.display = 'none';
+        console.log("📸 Modal container hidden for cancel");
         if (onCancel) onCancel();
       };
     }
@@ -206,11 +214,17 @@
     }
 
     function showMetadataLoadingMessage() {
-      console.log("📸 Showing metadata loading spinner");
+      console.log("📸 Entering showMetadataLoadingMessage");
       const modalContainer = document.getElementById('modal-container');
       if (!modalContainer) {
         console.error("❌ Modal container not found!");
-        return;
+        // Fallback: recreate modal-container
+        const newContainer = document.createElement('div');
+        newContainer.id = 'modal-container';
+        newContainer.style.display = 'none';
+        document.body.appendChild(newContainer);
+        console.log("📸 Created new modal-container");
+        return showMetadataLoadingMessage(); // Retry
       }
       modalContainer.innerHTML = `
         <div class="modal">
@@ -222,16 +236,18 @@
       console.log("📸 Metadata spinner container display set to block");
       // Force DOM update
       modalContainer.offsetHeight; // Trigger reflow
+      console.log("📸 Forced DOM reflow for metadata spinner");
     }
 
     function hideLoadingMessage() {
-      console.log("📸 Hiding loading spinner");
+      console.log("📸 Entering hideLoadingMessage");
       const modalContainer = document.getElementById('modal-container');
       if (!modalContainer) {
         console.error("❌ Modal container not found!");
         return;
       }
       modalContainer.style.display = 'none';
+      console.log("📸 Loading spinner hidden");
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
@@ -244,6 +260,12 @@
 
       if (!modalContainer) {
         console.error("❌ Modal container not found in DOM!");
+        // Create fallback modal-container
+        const newContainer = document.createElement('div');
+        newContainer.id = 'modal-container';
+        newContainer.style.display = 'none';
+        document.body.appendChild(newContainer);
+        console.log("📸 Created new modal-container in DOMContentLoaded");
       }
 
       await displayWatchlist();
@@ -279,89 +301,97 @@
           }
 
           showModal(message, async () => {
-            console.log("✅ Starting onConfirm callback");
-            showMetadataLoadingMessage(); // Show spinner
-            const minSpinnerDuration = new Promise(resolve => setTimeout(resolve, 500));
-            if (newTickers.length > 0) {
-              console.log("📸 Saving watchlist");
-              const currentWatchlist = await getWatchlist();
-              const updatedWatchlist = [...currentWatchlist, ...newTickers].sort();
-              const saveSuccess = await saveWatchlist(updatedWatchlist);
-              console.log("📸 Save watchlist success:", saveSuccess);
-              if (saveSuccess) {
-                let fetchSuccess = true;
-                try {
-                  for (let i = 0; i < newTickers.length; i++) {
-                    const batch = newTickers.slice(i, i + 1);
-                    console.log(`📡 Fetching metadata for batch: ${batch.join(', ')}`);
-                    const result = await fetchMetadataForTickers(batch);
-                    console.log(`📸 Metadata fetch result for ${batch.join(', ')}:`, result);
-                    fetchSuccess = result && fetchSuccess;
-                    if (i < newTickers.length - 1) {
-                      await new Promise(resolve => setTimeout(resolve, 1200));
-                    }
-                  }
-                } catch (error) {
-                  console.error(`❌ Error fetching metadata: ${error.message}`);
-                  fetchSuccess = false;
-                }
-                console.log("📸 Metadata fetch completed, success:", fetchSuccess);
-                await minSpinnerDuration; // Ensure spinner shows for at least 500ms
-                hideLoadingMessage(); // Hide spinner
-                if (fetchSuccess) {
-                  console.log("📸 Showing historical data modal");
-                  showModal(`Would you like to collect historical data for ${newTickers.join(', ')}?`, async () => {
-                    try {
-                      const results = [];
-                      for (let i = 0; i < newTickers.length; i++) {
-                        const ticker = newTickers[i];
-                        showLoadingMessage(ticker);
-                        console.log(`📡 Sending historical data request for ${ticker} to Cloud Run`);
-                        try {
-                          const response = await fetch('https://loadhistoricaldata-27892139023.us-central1.run.app', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ ticker: ticker })
-                          });
-                          const responseText = await response.text();
-                          hideLoadingMessage();
-                          if (!response.ok) {
-                            console.error(`❌ Historical load failed for ${ticker}: ${response.status} ${responseText}`);
-                            results.push(`🚫 ${ticker}: Failed to load historical data: ${responseText}`);
-                          } else {
-                            console.log(`✅ Historical data fetched for ${ticker}: ${responseText}`);
-                            results.push(`✅ ${ticker}: ${responseText}`);
-                          }
-                        } catch (error) {
-                          hideLoadingMessage();
-                          console.error(`❌ Error fetching historical data for ${ticker}: ${error.message}`);
-                          results.push(`🚫 ${ticker}: Error: ${error.message}`);
-                        }
-                        if (i < newTickers.length - 1) {
-                          await new Promise(resolve => setTimeout(resolve, 1200));
-                        }
+            console.log("✅ Entering onConfirm callback");
+            try {
+              showMetadataLoadingMessage(); // Show spinner
+              console.log("📸 Called showMetadataLoadingMessage");
+              const minSpinnerDuration = new Promise(resolve => setTimeout(resolve, 500));
+              if (newTickers.length > 0) {
+                console.log("📸 Saving watchlist");
+                const currentWatchlist = await getWatchlist();
+                const updatedWatchlist = [...currentWatchlist, ...newTickers].sort();
+                const saveSuccess = await saveWatchlist(updatedWatchlist);
+                console.log("📸 Save watchlist success:", saveSuccess);
+                if (saveSuccess) {
+                  let fetchSuccess = true;
+                  try {
+                    for (let i = 0; i < newTickers.length; i++) {
+                      const batch = newTickers.slice(i, i + 1);
+                      console.log(`📡 Fetching metadata for batch: ${batch.join(', ')}`);
+                      const result = await fetchMetadataForTickers(batch);
+                      console.log(`📸 Metadata fetch result for ${batch.join(', ')}:`, result);
+                      fetchSuccess = result && fetchSuccess;
+                      if (i < newTickers.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 1200));
                       }
-                      showPersistentMessage(results.join('\n'));
-                    } catch (error) {
-                      hideLoadingMessage();
-                      console.error(`❌ Unexpected error: ${error.message}`);
-                      showPersistentMessage(`🚫 Unexpected error: ${error.message}`);
                     }
-                  }, () => {
-                    console.log("❌ Historical fetch cancelled.");
-                    hideLoadingMessage();
-                  });
+                  } catch (error) {
+                    console.error(`❌ Error fetching metadata: ${error.message}`);
+                    fetchSuccess = false;
+                  }
+                  console.log("📸 Metadata fetch completed, success:", fetchSuccess);
+                  await minSpinnerDuration; // Ensure spinner shows for at least 500ms
+                  hideLoadingMessage(); // Hide spinner
+                  console.log("📸 Called hideLoadingMessage");
+                  if (fetchSuccess) {
+                    console.log("📸 Showing historical data modal");
+                    showModal(`Would you like to collect historical data for ${newTickers.join(', ')}?`, async () => {
+                      try {
+                        const results = [];
+                        for (let i = 0; i < newTickers.length; i++) {
+                          const ticker = newTickers[i];
+                          showLoadingMessage(ticker);
+                          console.log(`📡 Sending historical data request for ${ticker} to Cloud Run`);
+                          try {
+                            const response = await fetch('https://loadhistoricaldata-27892139023.us-central1.run.app', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ ticker: ticker })
+                            });
+                            const responseText = await response.text();
+                            hideLoadingMessage();
+                            if (!response.ok) {
+                              console.error(`❌ Historical load failed for ${ticker}: ${response.status} ${responseText}`);
+                              results.push(`🚫 ${ticker}: Failed to load historical data: ${responseText}`);
+                            } else {
+                              console.log(`✅ Historical data fetched for ${ticker}: ${responseText}`);
+                              results.push(`✅ ${ticker}: ${responseText}`);
+                            }
+                          } catch (error) {
+                            hideLoadingMessage();
+                            console.error(`❌ Error fetching historical data for ${ticker}: ${error.message}`);
+                            results.push(`🚫 ${ticker}: Error: ${error.message}`);
+                          }
+                          if (i < newTickers.length - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 1200));
+                          }
+                        }
+                        showPersistentMessage(results.join('\n'));
+                      } catch (error) {
+                        hideLoadingMessage();
+                        console.error(`❌ Unexpected error: ${error.message}`);
+                        showPersistentMessage(`🚫 Unexpected error: ${error.message}`);
+                      }
+                    }, () => {
+                      console.log("❌ Historical fetch cancelled.");
+                      hideLoadingMessage();
+                    });
+                  } else {
+                    showPersistentMessage(`✅ Added tickers, but metadata fetch failed for some.`);
+                  }
+                  await displayWatchlist();
                 } else {
-                  showPersistentMessage(`✅ Added tickers, but metadata fetch failed for some.`);
+                  showPersistentMessage('🚫 Failed to add tickers.');
                 }
-                await displayWatchlist();
               } else {
-                showPersistentMessage('🚫 Failed to add tickers.');
+                showPersistentMessage('No new tickers to add.');
               }
-            } else {
-              showPersistentMessage('No new tickers to add.');
+              tickerInput.value = '';
+            } catch (error) {
+              console.error("❌ Error in onConfirm callback:", error.message);
+              hideLoadingMessage();
+              showPersistentMessage(`🚫 Error adding tickers: ${error.message}`);
             }
-            tickerInput.value = '';
           }, () => {
             console.log("❌ User cancelled.");
           });
@@ -411,31 +441,9 @@
 
       tickerList.innerHTML = `
         <div class="ticker-count">
-          <p>Total tickers: ${sortedTickers.length}</p>
-        </div>
-        ${tickerHTML}
-      `;
-    }
-
-    window.confirmDelete = function(ticker) {
-      showModal(`You're about to remove ${ticker} from your watchlist.\nAre you sure you want to proceed?`, async () => {
-        const currentWatchlist = await getWatchlist();
-        const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
-        const success = await saveWatchlist(updatedWatchlist);
-        if (success) {
-          showPersistentMessage(`✅ ${ticker} successfully deleted from your watchlist`);
-          await displayWatchlist();
-        } else {
-          showPersistentMessage(`🚫 Failed to delete ${ticker}. Please try again.`);
-        }
-      }, () => {
-        console.log("❌ Delete cancelled.");
-      });
-    };
-  </script>
-</body>
-</html>
-    
+          <p>Total tickers: ${sortedTickers.length}</p
+     
        
-          
-      
+        
+                     
+     
