@@ -226,13 +226,13 @@
 
           showModal(message, async () => {
             console.log("✅ User confirmed. Adding new tickers...");
+            showMetadataLoadingMessage(); // Show spinner when Confirm is clicked
             if (newTickers.length > 0) {
               const currentWatchlist = await getWatchlist();
               const updatedWatchlist = [...currentWatchlist, ...newTickers].sort();
               const saveSuccess = await saveWatchlist(updatedWatchlist);
               if (saveSuccess) {
                 let fetchSuccess = true;
-                showMetadataLoadingMessage(); // Show spinner for metadata fetch
                 try {
                   for (let i = 0; i < newTickers.length; i++) {
                     const batch = newTickers.slice(i, i + 1);
@@ -244,10 +244,9 @@
                 } catch (error) {
                   console.error(`❌ Error fetching metadata: ${error.message}`);
                   fetchSuccess = false;
-                } finally {
-                  hideLoadingMessage(); // Hide spinner
                 }
                 if (fetchSuccess) {
+                  hideLoadingMessage(); // Hide spinner before showing historical data modal
                   showModal(`Would you like to collect historical data for ${newTickers.join(', ')}?`, async () => {
                     try {
                       const results = [];
@@ -290,13 +289,16 @@
                     hideLoadingMessage();
                   });
                 } else {
+                  hideLoadingMessage(); // Hide spinner before showing failure message
                   showPersistentMessage(`✅ Added tickers, but metadata fetch failed for some.`);
                 }
                 await displayWatchlist();
               } else {
+                hideLoadingMessage(); // Hide spinner before showing failure message
                 showPersistentMessage('🚫 Failed to add tickers.');
               }
             } else {
+              hideLoadingMessage(); // Hide spinner before showing no-tickers message
               showPersistentMessage('No new tickers to add.');
             }
             tickerInput.value = '';
@@ -373,3 +375,9 @@
   </script>
 </body>
 </html>
+   
+
+    
+     
+           
+     
