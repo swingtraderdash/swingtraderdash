@@ -76,7 +76,8 @@ async function loadDataForTicker(ticker, startDate, endDate) {
     high: item.high,
     low: item.low,
     open: item.open,
-    volume: item.volume
+    volume: item.volume,
+    adj_close: item.adjClose // Map Tiingo's adjClose to adj_close
   }));
 
   const datasetId = 'swing_trader_data';
@@ -305,3 +306,4 @@ export const protectedPage = onRequest(
     }
   }
 );
+ 
