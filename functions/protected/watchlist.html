@@ -184,7 +184,7 @@
       modalContainer.innerHTML = `
         <div class="modal">
           <div class="spinner"></div>
-          <p>Loading 10 years of historical data for ${ticker}...</p>
+          <p>Loading 10 years of data and configuring automated EOD updates. ${ticker}...</p>
         </div>
       `;
       modalContainer.style.display = 'block';
@@ -314,7 +314,7 @@
       console.log("📋 Watchlist loaded:", watchlist);
 
       if (!watchlist || watchlist.length === 0) {
-        tickerList.innerHTML = '<p>No tickers yet. Add some using the form above.</p>';
+        tickerList.innerHTML = '<p>No tickers yet.</p>';
         return;
       }
 
