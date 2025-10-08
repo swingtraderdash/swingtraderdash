@@ -20,26 +20,25 @@
       cursor: pointer;
     }
 
-   /* Scoped styling for ticker-count box */
-.ticker-count {
-  background-color: #e6f2ff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 12px;
-  font-weight: 500;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 16px;
-  color: #222;
-  text-align: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.06);
-  min-height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  margin-bottom: 10px;
-}
-
+    /* Scoped styling for ticker-count box */
+    .ticker-count {
+      background-color: #e6f2ff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      font-weight: 500;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 16px;
+      color: #222;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
 
     .modal {
       position: fixed;
@@ -134,7 +133,7 @@
   <div id="modal-container" style="display:none;"></div>
   <script type="module">
     import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { saveWatchlist, getWatchlist, fetchMetadataForTickers } from '/js/storage.js';
     import { injectNav } from "/js/injectNav.js";
     import { app } from "/js/firebaseConfig.js";
@@ -217,7 +216,6 @@
             feedback.textContent = `🚫 Invalid tickers: ${invalid.join(', ')}. Only letters and full stops are allowed.`;
             return;
           }
-
 
           const existingWatchlist = await getWatchlist();
           const alreadyInWatchlist = tickers.filter(t => existingWatchlist.includes(t));
@@ -361,7 +359,16 @@
         const updatedWatchlist = currentWatchlist.filter(t => t !== ticker).sort();
         const success = await saveWatchlist(updatedWatchlist);
         if (success) {
-          showPersistentMessage(`✅ ${ticker} successfully deleted from your watchlist`);
+          // Delete metadata from 'tickers' collection
+          try {
+            const tickerDocRef = doc(db, 'tickers', ticker);
+            await deleteDoc(tickerDocRef);
+            console.log(`✅ Metadata for ${ticker} deleted from Firestore.`);
+            showPersistentMessage(`✅ ${ticker} successfully deleted from your watchlist and metadata removed.`);
+          } catch (error) {
+            console.error(`❌ Failed to delete metadata for ${ticker}:`, error.message);
+            showPersistentMessage(`✅ ${ticker} deleted from watchlist, but metadata deletion failed: ${error.message}`);
+          }
           await displayWatchlist();
         } else {
           showPersistentMessage(`🚫 Failed to delete ${ticker}. Please try again.`);
@@ -372,7 +379,9 @@
     };
   </script>
 </body>
-</html>  
+</html>
+   
 
-        
-    
+   
+                  
+         
