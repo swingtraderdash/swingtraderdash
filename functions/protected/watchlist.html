@@ -265,7 +265,7 @@
                             console.error(`❌ Historical load failed for ${ticker}: ${response.status} ${responseText}`);
                             results.push(`🚫 ${ticker}: Failed to load historical data: ${responseText}`);
                           } else {
-                            console.log(`✅ Historical data fetched for ${ticker}: ${responseText}`);
+                            console.log(`✅ Historical data and E.O.D data will now be updated for ${ticker}: ${responseText}`);
                             results.push(`✅ ${ticker}: ${responseText}`);
                           }
                         } catch (error) {
