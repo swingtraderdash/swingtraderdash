@@ -186,7 +186,7 @@ export const triggerDailyEOD = onRequest(
   async (req, res) => {
     const date = new Date().toISOString().split('T')[0];
     const firestore = getFirestore();
-    const snapshot = await firestore.collection('tickers').get();
+    const snapshot = await firestore.collection('users/sIAHeA7k0iVy11cnt8Dk7bKMPz12').get();
     const tickers = snapshot.docs.map(doc => doc.id);
 
     const chunkSize = 50;
