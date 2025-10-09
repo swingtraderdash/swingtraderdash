@@ -77,7 +77,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
     low: item.low,
     open: item.open,
     volume: item.volume,
-    adj_close: item.adjClose // Map Tiingo's adjClose to adj_close
+    adj_close: item.adjClose
   }));
 
   const datasetId = 'swing_trader_data';
@@ -186,8 +186,15 @@ export const triggerDailyEOD = onRequest(
   async (req, res) => {
     const date = new Date().toISOString().split('T')[0];
     const firestore = getFirestore();
-    const snapshot = await firestore.collection('users/sIAHeA7k0iVy11cnt8Dk7bKMPz12').get();
-    const tickers = snapshot.docs.map(doc => doc.id);
+
+    // Read tickers directly from the user's watchlist document
+    const userDocRef = firestore.doc('users/sIAHeA7k0iVy11cnt8Dk7bKMPz12');
+    const userDoc = await userDocRef.get();
+    const tickers = (userDoc.exists && Array.isArray(userDoc.data().watchlist))
+      ? userDoc.data().watchlist
+      : [];
+
+    logger.info(`[EOD] Pulled ${tickers.length} tickers from users/sIAHeA7k0iVy11cnt8Dk7bKMPz12.watchlist`);
 
     const chunkSize = 50;
     const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -233,6 +240,7 @@ export const triggerDailyEOD = onRequest(
     });
   }
 );
+
 
 export const loadHistoricalData = onRequest(
   {
