@@ -89,22 +89,29 @@ function validateTiingoData(data, ticker, apiUrl) {
   }
 }
 
-// Micro Step 7: Check for duplicate data in BigQuery
+// Micro Step 7: Check for duplicate data in BigQuery (fixed type mismatch)
 async function checkForDuplicates(ticker, dates, datasetId, tableId) {
+  // Cast string dates to DATE in the query to match BigQuery's DATE column
   const query = `
     SELECT date
     FROM \`${datasetId}.${tableId}\`
-    WHERE ticker_symbol = @ticker AND date IN UNNEST(@dates)
+    WHERE ticker_symbol = @ticker AND date IN UNNEST(
+      ARRAY(
+        SELECT PARSE_DATE('%Y-%m-%d', date_string)
+        FROM UNNEST(@dates AS date_string)
+      )
+    )
   `;
   const options = {
     query,
     params: {
       ticker,
-      dates: dates.map(date => date.split('T')[0])
+      dates: dates.map(date => date.split('T')[0]) // String array, e.g., ["2023-10-10"]
     }
   };
 
   try {
+    logger.info(`[BigQuery] Checking duplicates for ${ticker} with dates: ${dates.join(', ')}`);
     const [rows] = await bigquery.query(options);
     return rows.map(row => row.date);
   } catch (err) {
@@ -115,7 +122,8 @@ async function checkForDuplicates(ticker, dates, datasetId, tableId) {
       functionName: 'checkForDuplicates',
       timestamp: new Date().toISOString(),
       datasetId,
-      tableId
+      tableId,
+      queryParams: { ticker, dates }
     };
     logger.error(`[BigQuery] Duplicate check failed for ${ticker}`, errorDetails);
     throw new Error(errorDetails.message);
@@ -534,6 +542,7 @@ export const protectedPage = onRequest(
   }
 );
    
+
 
    
    
