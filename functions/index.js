@@ -172,22 +172,25 @@ async function loadDataForTicker(ticker, startDate, endDate) {
   const maxRetries = 3;
   let retryCount = 0;
 
-  // Micro Step 9 (Revised): Simulate HTTP 429 for testing retry logic (temporary)
-  const simulate429Count = 2; // Simulate 429 for first two attempts
+  // Micro Step 10: Simulate HTTP 404 and 500 for testing status validation (temporary)
+  let simulateErrorCount = 2; // Simulate 404 for first attempt, 500 for second
   const originalFetch = fetch; // Store original fetch function
   const mockFetch = async (url, options) => {
-    logger.info(`[Tiingo] Entering mockFetch for ${ticker}`);
-    if (simulate429Count > 0) {
-      const remaining = simulate429Count - 1;
-      logger.info(`[Tiingo] Simulating HTTP 429 for ${ticker}, remaining simulations: ${remaining}`);
-      return { ok: false, status: 429, statusText: 'Rate Limit Exceeded', simulateCount: remaining };
+    if (simulateErrorCount === 2) {
+      simulateErrorCount--;
+      logger.info(`[Tiingo] Simulating HTTP 404 for ${ticker}, remaining simulations: ${simulateErrorCount}`);
+      return { ok: false, status: 404, statusText: 'Not Found' };
+    } else if (simulateErrorCount === 1) {
+      simulateErrorCount--;
+      logger.info(`[Tiingo] Simulating HTTP 500 for ${ticker}, remaining simulations: ${simulateErrorCount}`);
+      return { ok: false, status: 500, statusText: 'Server Error' };
     }
-    return originalFetch(url, options); // Use real fetch after simulations
+    return originalFetch(url, options); // Use real fetch for third attempt
   };
 
   while (retryCount < maxRetries) {
     try {
-      // Micro Step 9: Use mockFetch for testing
+      // Micro Step 10: Use mockFetch for testing
       response = await mockFetch(url, { signal: AbortSignal.timeout(10000) }); // 10-second timeout
       if (!response.ok) {
         if (response.status === 429 && retryCount < maxRetries - 1) {
@@ -258,7 +261,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
   }
 
   // Micro Step 6 & 8: Validate parsed data against full BigQuery schema with inconsistency checks
-  validateTiingoData(data, ticker, url);
+  validateTiingoData(data, ticker, apiUrl);
 
   // Micro Step 7: Check for duplicates before mapping rows
   const datasetId = 'swing_trader_data';
@@ -553,7 +556,7 @@ export const protectedPage = onRequest(
   async (req, res) => {
     res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
     res.set('Access-Control-Allow-Methods', 'GET');
-    res.set('Access-Control-Allow-Headers', 'Authorization');
+    res.set('Access-Control-Headers', 'Authorization');
 
     logger.info("🔐 protectedPage triggered");
 
@@ -582,9 +585,8 @@ export const protectedPage = onRequest(
     }
   }
 );
-  
-      
-    
+
+
         
 
 
