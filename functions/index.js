@@ -89,6 +89,39 @@ function validateTiingoData(data, ticker, apiUrl) {
   }
 }
 
+// Micro Step 7: Check for duplicate data in BigQuery
+async function checkForDuplicates(ticker, dates, datasetId, tableId) {
+  const query = `
+    SELECT date
+    FROM \`${datasetId}.${tableId}\`
+    WHERE ticker_symbol = @ticker AND date IN UNNEST(@dates)
+  `;
+  const options = {
+    query,
+    params: {
+      ticker,
+      dates: dates.map(date => date.split('T')[0])
+    }
+  };
+
+  try {
+    const [rows] = await bigquery.query(options);
+    return rows.map(row => row.date);
+  } catch (err) {
+    const errorDetails = {
+      errorType: 'DuplicateCheckError',
+      message: `Failed to check duplicates for ${ticker}: ${err.message}`,
+      ticker,
+      functionName: 'checkForDuplicates',
+      timestamp: new Date().toISOString(),
+      datasetId,
+      tableId
+    };
+    logger.error(`[BigQuery] Duplicate check failed for ${ticker}`, errorDetails);
+    throw new Error(errorDetails.message);
+  }
+}
+
 async function loadDataForTicker(ticker, startDate, endDate) {
   // Micro Step 5: Ensure robust response parsing with structured error logging
   const apiKey = TIINGO_API_KEY.value();
@@ -178,8 +211,41 @@ async function loadDataForTicker(ticker, startDate, endDate) {
   // Micro Step 6: Validate parsed data against full BigQuery schema
   validateTiingoData(data, ticker, url);
 
+  // Micro Step 7: Check for duplicates before mapping rows
+  const datasetId = 'swing_trader_data';
+  const tableId = 'ticker_history';
+  const dates = data.map(item => item.date);
+  let nonDuplicateRows = data;
+
+  try {
+    const existingDates = await checkForDuplicates(ticker, dates, datasetId, tableId);
+    if (existingDates.length > 0) {
+      const existingDateSet = new Set(existingDates.map(date => date.split('T')[0]));
+      nonDuplicateRows = data.filter(item => !existingDateSet.has(item.date.split('T')[0]));
+      const duplicateCount = data.length - nonDuplicateRows.length;
+      if (duplicateCount > 0) {
+        const warningDetails = {
+          errorType: 'DuplicateDataWarning',
+          message: `Found ${duplicateCount} duplicate rows for ${ticker}`,
+          ticker,
+          functionName: 'loadDataForTicker',
+          timestamp: new Date().toISOString(),
+          duplicateDates: existingDates
+        };
+        logger.warn(`[BigQuery] Skipped ${duplicateCount} duplicate rows for ${ticker}`, warningDetails);
+      }
+    }
+  } catch (err) {
+    throw err; // Rethrow to halt processing if duplicate check fails
+  }
+
+  if (nonDuplicateRows.length === 0) {
+    logger.info(`[BigQuery] No new rows to insert for ${ticker} after duplicate check`);
+    return 0;
+  }
+
   // Map data to BigQuery schema, including ticker_symbol and last_updated
-  const rows = data.map(item => ({
+  const rows = nonDuplicateRows.map(item => ({
     ticker_symbol: ticker, // Derived from input ticker
     date: item.date.split('T')[0], // Convert to YYYY-MM-DD
     open: item.open ?? null,
@@ -191,8 +257,6 @@ async function loadDataForTicker(ticker, startDate, endDate) {
     last_updated: new Date().toISOString() // Set to current timestamp
   }));
 
-  const datasetId = 'swing_trader_data';
-  const tableId = 'ticker_history';
   const tempFilePath = path.join(os.tmpdir(), `ticker_data_${ticker}_${Date.now()}.json`);
   let rowsInserted;
 
@@ -469,3 +533,11 @@ export const protectedPage = onRequest(
     }
   }
 );
+   
+
+   
+   
+   
+      
+   
+   
