@@ -28,7 +28,7 @@ const corsHandler = cors({
 });
 
 // Micro Step 6 & 8: Schema validation function with inconsistency checks
-function validateTiingoData(data, ticker, apiUrl) {
+function validateTiingoData(data, ticker, url) {
   const requiredFields = ['date'];
   const nullableFields = [
     { name: 'open', type: 'number' },
@@ -92,7 +92,7 @@ function validateTiingoData(data, ticker, apiUrl) {
         ticker,
         functionName: 'validateTiingoData',
         timestamp: new Date().toISOString(),
-        apiUrl,
+        url,
         inconsistentFields,
         date: item.date
       };
@@ -107,7 +107,7 @@ function validateTiingoData(data, ticker, apiUrl) {
         ticker,
         functionName: 'validateTiingoData',
         timestamp: new Date().toISOString(),
-        apiUrl,
+        url,
         missingFields,
         invalidFields
       };
@@ -232,7 +232,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
       ticker,
       functionName: 'loadDataForTicker',
       timestamp: new Date().toISOString(),
-      apiUrl: url
+      url
     };
     logger.error(`[Tiingo] Failed to read response text for ${ticker}`, errorDetails);
     throw new Error('Failed to read Tiingo response body');
@@ -249,7 +249,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
       ticker,
       functionName: 'loadDataForTicker',
       timestamp: new Date().toISOString(),
-      apiUrl: url,
+      url,
       rawResponse: rawText.substring(0, 500) // Include raw text for debugging
     };
     logger.error(`[Tiingo] JSON parse failed for ${ticker}`, errorDetails);
@@ -261,7 +261,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
   }
 
   // Micro Step 6 & 8: Validate parsed data against full BigQuery schema with inconsistency checks
-  validateTiingoData(data, ticker, apiUrl);
+  validateTiingoData(data, ticker, url);
 
   // Micro Step 7: Check for duplicates before mapping rows
   const datasetId = 'swing_trader_data';
@@ -386,7 +386,7 @@ export const fetchTiingo = onCall(
             ticker,
             functionName: 'fetchTiingo',
             timestamp: new Date().toISOString(),
-            apiUrl: url,
+            url,
             status: response.status,
             statusText: response.statusText
           };
@@ -406,7 +406,7 @@ export const fetchTiingo = onCall(
             ticker,
             functionName: 'fetchTiingo',
             timestamp: new Date().toISOString(),
-            apiUrl: url
+            url
           };
           logger.error(`[Tiingo] JSON parse failed for ${ticker}`, errorDetails);
           throw new Error('Failed to parse Tiingo response');
@@ -419,7 +419,7 @@ export const fetchTiingo = onCall(
             ticker,
             functionName: 'fetchTiingo',
             timestamp: new Date().toISOString(),
-            apiUrl: url
+            url
           };
           logger.error(`[Tiingo] Validation failed for ${ticker}`, errorDetails);
           throw new Error('Missing expected Tiingo fields');
@@ -439,7 +439,7 @@ export const fetchTiingo = onCall(
           ticker,
           functionName: 'fetchTiingo',
           timestamp: new Date().toISOString(),
-          apiUrl: url
+          url
         };
         logger.error(`[Tiingo] fetch:error for ${ticker}`, errorDetails);
         throw new Error(`Failed to fetch Tiingo data: ${err.message}`);
@@ -556,7 +556,7 @@ export const protectedPage = onRequest(
   async (req, res) => {
     res.set('Access-Control-Allow-Origin', 'https://swingtraderdash-1a958.web.app');
     res.set('Access-Control-Allow-Methods', 'GET');
-    res.set('Access-Control-Headers', 'Authorization');
+    res.set('Access-Control-Allow-Headers', 'Authorization');
 
     logger.info("🔐 protectedPage triggered");
 
@@ -585,9 +585,15 @@ export const protectedPage = onRequest(
     }
   }
 );
+   
 
-
+     
+  
+      
+     
         
+   
+     
 
 
  
