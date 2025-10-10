@@ -1,0 +1,5 @@
+Tiingo API Calls in functions/index.js:
+- loadDataForTicker(ticker, startDate, endDate): Handles both historical and EOD data
+- fetchTiingo(request): Handles historical data (via loadDataForTicker) and metadata (direct API call)
+- triggerDailyEOD(req, res): Handles EOD data (via loadDataForTicker)
+- loadHistoricalData(req, res): Handles historical data (via loadDataForTicker)
