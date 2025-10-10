@@ -39,18 +39,37 @@ async function loadDataForTicker(ticker, startDate, endDate) {
   logger.info(`[Tiingo] Historical fetch URL for ${ticker}: ${url}`);
 
   let response;
-  try {
-    response = await fetch(url, { signal: AbortSignal.timeout(10000) }); // 10-second timeout
-    if (!response.ok) {
-      const errorMessage = `[Tiingo] HTTP error for ${ticker}: ${response.status} ${response.statusText}`;
-      logger.error(errorMessage, { status: response.status, statusText: response.statusText });
+  const maxRetries = 3;
+  let retryCount = 0;
+  while (retryCount < maxRetries) {
+    try {
+      response = await fetch(url, { signal: AbortSignal.timeout(10000) }); // 10-second timeout
+      if (!response.ok) {
+        if (response.status === 429 && retryCount < maxRetries - 1) {
+          const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
+          logger.warn(`[Tiingo] Rate limit hit for ${ticker}, retrying after ${delay}ms`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          retryCount++;
+          continue;
+        }
+        const errorMessage = `[Tiingo] HTTP error for ${ticker}: ${response.status} ${response.statusText}`;
+        logger.error(errorMessage, { status: response.status, statusText: response.statusText });
+        throw new Error(errorMessage);
+      }
+      logger.info(`[Tiingo] Response status for ${ticker}: ${response.status}`);
+      break; // Success, exit retry loop
+    } catch (fetchErr) {
+      const errorMessage = `[Tiingo] Fetch failed for ${ticker}: ${fetchErr.message}`;
+      logger.error(errorMessage, { error: fetchErr });
+      if (retryCount < maxRetries - 1) {
+        const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
+        logger.warn(`[Tiingo] Retrying after ${delay}ms for ${ticker}`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        retryCount++;
+        continue;
+      }
       throw new Error(errorMessage);
     }
-    logger.info(`[Tiingo] Response status for ${ticker}: ${response.status}`);
-  } catch (fetchErr) {
-    const errorMessage = `[Tiingo] Fetch failed for ${ticker}: ${fetchErr.message}`;
-    logger.error(errorMessage, { error: fetchErr });
-    throw new Error(errorMessage);
   }
 
   let rawText;
@@ -319,7 +338,3 @@ export const protectedPage = onRequest(
     }
   }
 );
- 
-   
-   
-      
