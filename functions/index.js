@@ -172,14 +172,15 @@ async function loadDataForTicker(ticker, startDate, endDate) {
   const maxRetries = 3;
   let retryCount = 0;
 
-  // Micro Step 9: Simulate HTTP 429 for testing retry logic (temporary)
-  let simulate429Count = 2; // Simulate 429 for first two attempts
+  // Micro Step 9 (Revised): Simulate HTTP 429 for testing retry logic (temporary)
+  const simulate429Count = 2; // Simulate 429 for first two attempts
   const originalFetch = fetch; // Store original fetch function
   const mockFetch = async (url, options) => {
+    logger.info(`[Tiingo] Entering mockFetch for ${ticker}`);
     if (simulate429Count > 0) {
-      simulate429Count--;
-      logger.info(`[Tiingo] Simulating HTTP 429 for ${ticker}, remaining simulations: ${simulate429Count}`);
-      return { ok: false, status: 429, statusText: 'Rate Limit Exceeded' };
+      const remaining = simulate429Count - 1;
+      logger.info(`[Tiingo] Simulating HTTP 429 for ${ticker}, remaining simulations: ${remaining}`);
+      return { ok: false, status: 429, statusText: 'Rate Limit Exceeded', simulateCount: remaining };
     }
     return originalFetch(url, options); // Use real fetch after simulations
   };
@@ -581,6 +582,8 @@ export const protectedPage = onRequest(
     }
   }
 );
+  
+      
     
         
 
