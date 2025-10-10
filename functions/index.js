@@ -27,7 +27,7 @@ const corsHandler = cors({
   allowedHeaders: ['Content-Type']
 });
 
-// Micro Step 6: Schema validation function for Tiingo data against BigQuery schema
+// Micro Step 6 & 8: Schema validation function with inconsistency checks
 function validateTiingoData(data, ticker, apiUrl) {
   const requiredFields = ['date'];
   const nullableFields = [
@@ -35,15 +35,16 @@ function validateTiingoData(data, ticker, apiUrl) {
     { name: 'high', type: 'number' },
     { name: 'low', type: 'number' },
     { name: 'close', type: 'number' },
-    { name: 'volume', type: 'number' }, // Will check for integer in row mapping
+    { name: 'volume', type: 'number' },
     { name: 'adjClose', type: 'number' }
   ];
   
   for (const item of data) {
     const missingFields = [];
     const invalidFields = [];
+    const inconsistentFields = [];
 
-    // Check required fields
+    // Micro Step 6: Check required fields
     for (const field of requiredFields) {
       if (item[field] === undefined || item[field] === null) {
         missingFields.push(field);
@@ -59,7 +60,7 @@ function validateTiingoData(data, ticker, apiUrl) {
       }
     }
 
-    // Check nullable fields
+    // Micro Step 6: Check nullable fields for type
     for (const field of nullableFields) {
       if (item[field.name] !== undefined && item[field.name] !== null) {
         if (typeof item[field.name] !== field.type) {
@@ -72,6 +73,33 @@ function validateTiingoData(data, ticker, apiUrl) {
       }
     }
 
+    // Micro Step 8: Check for inconsistencies (zero or negative values)
+    for (const field of nullableFields) {
+      if (item[field.name] !== undefined && item[field.name] !== null) {
+        if (item[field.name] === 0) {
+          inconsistentFields.push(`${field.name} (zero value)`);
+        } else if (item[field.name] < 0) {
+          inconsistentFields.push(`${field.name} (negative value)`);
+        }
+      }
+    }
+
+    // Log warnings for inconsistencies but allow processing to continue
+    if (inconsistentFields.length > 0) {
+      const warningDetails = {
+        errorType: 'DataInconsistencyWarning',
+        message: `Inconsistent data detected for ${ticker}: ${inconsistentFields.join(', ')}`,
+        ticker,
+        functionName: 'validateTiingoData',
+        timestamp: new Date().toISOString(),
+        apiUrl,
+        inconsistentFields,
+        date: item.date
+      };
+      logger.warn(`[Tiingo] Inconsistent data for ${ticker} on ${item.date}`, warningDetails);
+    }
+
+    // Throw error for missing or invalid fields
     if (missingFields.length > 0 || invalidFields.length > 0) {
       const errorDetails = {
         errorType: 'SchemaValidationError',
@@ -89,9 +117,9 @@ function validateTiingoData(data, ticker, apiUrl) {
   }
 }
 
-// Micro Step 7: Check for duplicate data in BigQuery (fixed alias error in UNNEST)
+// Micro Step 7: Check for duplicate data in BigQuery
 async function checkForDuplicates(ticker, dates, datasetId, tableId) {
-  // Simplified query to cast string dates to DATE without alias in UNNEST
+  // Simplified query to cast string dates to DATE
   const query = `
     SELECT date
     FROM \`${datasetId}.${tableId}\`
@@ -214,7 +242,7 @@ async function loadDataForTicker(ticker, startDate, endDate) {
     throw new Error('No data returned from Tiingo');
   }
 
-  // Micro Step 6: Validate parsed data against full BigQuery schema
+  // Micro Step 6 & 8: Validate parsed data against full BigQuery schema with inconsistency checks
   validateTiingoData(data, ticker, url);
 
   // Micro Step 7: Check for duplicates before mapping rows
@@ -539,16 +567,12 @@ export const protectedPage = onRequest(
     }
   }
 );
-   
-
-      
-
   
-         
-
-       
-   
+  
+    
+    
+    
+        
 
     
-
-   
+  
