@@ -174,10 +174,13 @@ export const fetchTiingo = onCall(
     } else {
       const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=${apiKey}`;
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, { signal: AbortSignal.timeout(10000) }); // 10-second timeout
         if (!response.ok) {
-          throw new Error(`Tiingo responded with status ${response.status}`);
+          const errorMessage = `[Tiingo] HTTP error for ${ticker}: ${response.status} ${response.statusText}`;
+          logger.error(errorMessage, { status: response.status, statusText: response.statusText });
+          throw new Error(errorMessage);
         }
+        logger.info(`[Tiingo] Response status for ${ticker}: ${response.status}`);
 
         const json = await response.json();
         logger.info(`[Tiingo] Raw response for ${ticker}: ${JSON.stringify(json)}`);
