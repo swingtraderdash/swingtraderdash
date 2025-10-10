@@ -89,17 +89,15 @@ function validateTiingoData(data, ticker, apiUrl) {
   }
 }
 
-// Micro Step 7: Check for duplicate data in BigQuery (fixed type mismatch)
+// Micro Step 7: Check for duplicate data in BigQuery (fixed alias error in UNNEST)
 async function checkForDuplicates(ticker, dates, datasetId, tableId) {
-  // Cast string dates to DATE in the query to match BigQuery's DATE column
+  // Simplified query to cast string dates to DATE without alias in UNNEST
   const query = `
     SELECT date
     FROM \`${datasetId}.${tableId}\`
-    WHERE ticker_symbol = @ticker AND date IN UNNEST(
-      ARRAY(
-        SELECT PARSE_DATE('%Y-%m-%d', date_string)
-        FROM UNNEST(@dates AS date_string)
-      )
+    WHERE ticker_symbol = @ticker AND date IN (
+      SELECT PARSE_DATE('%Y-%m-%d', date_string)
+      FROM UNNEST(@dates) date_string
     )
   `;
   const options = {
@@ -543,10 +541,14 @@ export const protectedPage = onRequest(
 );
    
 
-
-   
-   
-   
       
+
+  
+         
+
+       
    
+
+    
+
    
