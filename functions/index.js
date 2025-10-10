@@ -40,11 +40,17 @@ async function loadDataForTicker(ticker, startDate, endDate) {
 
   let response;
   try {
-    response = await fetch(url);
+    response = await fetch(url, { signal: AbortSignal.timeout(10000) }); // 10-second timeout
+    if (!response.ok) {
+      const errorMessage = `[Tiingo] HTTP error for ${ticker}: ${response.status} ${response.statusText}`;
+      logger.error(errorMessage, { status: response.status, statusText: response.statusText });
+      throw new Error(errorMessage);
+    }
     logger.info(`[Tiingo] Response status for ${ticker}: ${response.status}`);
   } catch (fetchErr) {
-    logger.error(`[Tiingo] Fetch failed for ${ticker}: ${fetchErr.message}`, { error: fetchErr });
-    throw new Error('Failed to reach Tiingo API');
+    const errorMessage = `[Tiingo] Fetch failed for ${ticker}: ${fetchErr.message}`;
+    logger.error(errorMessage, { error: fetchErr });
+    throw new Error(errorMessage);
   }
 
   let rawText;
@@ -241,7 +247,6 @@ export const triggerDailyEOD = onRequest(
   }
 );
 
-
 export const loadHistoricalData = onRequest(
   {
     region: 'us-central1',
@@ -315,3 +320,6 @@ export const protectedPage = onRequest(
   }
 );
  
+   
+   
+      
