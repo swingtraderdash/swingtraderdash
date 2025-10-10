@@ -28,6 +28,7 @@ const corsHandler = cors({
 });
 
 async function loadDataForTicker(ticker, startDate, endDate) {
+  // Micro Step 5: Ensure robust response parsing with structured error logging
   const apiKey = TIINGO_API_KEY.value();
   if (!apiKey) {
     logger.error('[Tiingo] API key missing from Firebase Secrets');
@@ -72,21 +73,39 @@ async function loadDataForTicker(ticker, startDate, endDate) {
     }
   }
 
+  // Micro Step 5: Parse response body with dedicated error handling and structured logging
   let rawText;
   try {
     rawText = await response.text();
-    logger.info(`[Tiingo] Raw response text for ${ticker}: ${rawText}`);
+    logger.info(`[Tiingo] Raw response text for ${ticker}: ${rawText.substring(0, 500)}...`); // Limit log size
   } catch (textErr) {
-    logger.error(`[Tiingo] Failed to read response text for ${ticker}: ${textErr.message}`, { error: textErr });
+    const errorDetails = {
+      errorType: 'ResponseReadError',
+      message: textErr.message,
+      ticker,
+      functionName: 'loadDataForTicker',
+      timestamp: new Date().toISOString(),
+      apiUrl: url
+    };
+    logger.error(`[Tiingo] Failed to read response text for ${ticker}`, errorDetails);
     throw new Error('Failed to read Tiingo response body');
   }
 
   let data;
   try {
     data = JSON.parse(rawText);
-    logger.info(`[Tiingo] Parsed JSON for ${ticker}: ${JSON.stringify(data)}`);
+    logger.info(`[Tiingo] Parsed JSON for ${ticker}: ${JSON.stringify(data).substring(0, 500)}...`);
   } catch (jsonErr) {
-    logger.error(`[Tiingo] JSON parse failed for ${ticker}: ${jsonErr.message}`, { error: jsonErr });
+    const errorDetails = {
+      errorType: 'JSONParseError',
+      message: jsonErr.message,
+      ticker,
+      functionName: 'loadDataForTicker',
+      timestamp: new Date().toISOString(),
+      apiUrl: url,
+      rawResponse: rawText.substring(0, 500) // Include raw text for debugging
+    };
+    logger.error(`[Tiingo] JSON parse failed for ${ticker}`, errorDetails);
     throw new Error('Failed to parse Tiingo response');
   }
 
@@ -173,19 +192,53 @@ export const fetchTiingo = onCall(
       }
     } else {
       const url = `https://api.tiingo.com/tiingo/daily/${ticker}?token=${apiKey}`;
+      // Micro Step 5: Parse non-historical response with structured error logging
       try {
-        const response = await fetch(url, { signal: AbortSignal.timeout(10000) }); // 10-second timeout
+        const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
         if (!response.ok) {
           const errorMessage = `[Tiingo] HTTP error for ${ticker}: ${response.status} ${response.statusText}`;
-          logger.error(errorMessage, { status: response.status, statusText: response.statusText });
+          const errorDetails = {
+            errorType: 'HTTPError',
+            message: errorMessage,
+            ticker,
+            functionName: 'fetchTiingo',
+            timestamp: new Date().toISOString(),
+            apiUrl: url,
+            status: response.status,
+            statusText: response.statusText
+          };
+          logger.error(errorMessage, errorDetails);
           throw new Error(errorMessage);
         }
         logger.info(`[Tiingo] Response status for ${ticker}: ${response.status}`);
 
-        const json = await response.json();
-        logger.info(`[Tiingo] Raw response for ${ticker}: ${JSON.stringify(json)}`);
+        let json;
+        try {
+          json = await response.json();
+          logger.info(`[Tiingo] Parsed JSON for ${ticker}: ${JSON.stringify(json).substring(0, 500)}...`);
+        } catch (jsonErr) {
+          const errorDetails = {
+            errorType: 'JSONParseError',
+            message: jsonErr.message,
+            ticker,
+            functionName: 'fetchTiingo',
+            timestamp: new Date().toISOString(),
+            apiUrl: url
+          };
+          logger.error(`[Tiingo] JSON parse failed for ${ticker}`, errorDetails);
+          throw new Error('Failed to parse Tiingo response');
+        }
 
         if (!json.ticker || !json.name) {
+          const errorDetails = {
+            errorType: 'MissingFieldsError',
+            message: 'Missing expected Tiingo fields',
+            ticker,
+            functionName: 'fetchTiingo',
+            timestamp: new Date().toISOString(),
+            apiUrl: url
+          };
+          logger.error(`[Tiingo] Validation failed for ${ticker}`, errorDetails);
           throw new Error('Missing expected Tiingo fields');
         }
 
@@ -197,7 +250,15 @@ export const fetchTiingo = onCall(
           }
         };
       } catch (err) {
-        logger.error(`[Tiingo] fetch:error for ${ticker}: ${err.message}`, { error: err });
+        const errorDetails = {
+          errorType: 'FetchError',
+          message: err.message,
+          ticker,
+          functionName: 'fetchTiingo',
+          timestamp: new Date().toISOString(),
+          apiUrl: url
+        };
+        logger.error(`[Tiingo] fetch:error for ${ticker}`, errorDetails);
         throw new Error(`Failed to fetch Tiingo data: ${err.message}`);
       }
     }
