@@ -171,9 +171,23 @@ async function loadDataForTicker(ticker, startDate, endDate) {
   let response;
   const maxRetries = 3;
   let retryCount = 0;
+
+  // Micro Step 9: Simulate HTTP 429 for testing retry logic (temporary)
+  let simulate429Count = 2; // Simulate 429 for first two attempts
+  const originalFetch = fetch; // Store original fetch function
+  const mockFetch = async (url, options) => {
+    if (simulate429Count > 0) {
+      simulate429Count--;
+      logger.info(`[Tiingo] Simulating HTTP 429 for ${ticker}, remaining simulations: ${simulate429Count}`);
+      return { ok: false, status: 429, statusText: 'Rate Limit Exceeded' };
+    }
+    return originalFetch(url, options); // Use real fetch after simulations
+  };
+
   while (retryCount < maxRetries) {
     try {
-      response = await fetch(url, { signal: AbortSignal.timeout(10000) }); // 10-second timeout
+      // Micro Step 9: Use mockFetch for testing
+      response = await mockFetch(url, { signal: AbortSignal.timeout(10000) }); // 10-second timeout
       if (!response.ok) {
         if (response.status === 429 && retryCount < maxRetries - 1) {
           const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
@@ -567,12 +581,16 @@ export const protectedPage = onRequest(
     }
   }
 );
-  
-  
-    
-    
     
         
 
-    
+
+ 
   
+    
+
+    
+        
+  
+    
+    
