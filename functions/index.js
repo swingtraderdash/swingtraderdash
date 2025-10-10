@@ -27,6 +27,68 @@ const corsHandler = cors({
   allowedHeaders: ['Content-Type']
 });
 
+// Micro Step 6: Schema validation function for Tiingo data against BigQuery schema
+function validateTiingoData(data, ticker, apiUrl) {
+  const requiredFields = ['date'];
+  const nullableFields = [
+    { name: 'open', type: 'number' },
+    { name: 'high', type: 'number' },
+    { name: 'low', type: 'number' },
+    { name: 'close', type: 'number' },
+    { name: 'volume', type: 'number' }, // Will check for integer in row mapping
+    { name: 'adjClose', type: 'number' }
+  ];
+  
+  for (const item of data) {
+    const missingFields = [];
+    const invalidFields = [];
+
+    // Check required fields
+    for (const field of requiredFields) {
+      if (item[field] === undefined || item[field] === null) {
+        missingFields.push(field);
+      } else if (field === 'date' && typeof item[field] !== 'string') {
+        invalidFields.push(`${field} (invalid type: ${typeof item[field]})`);
+      } else if (field === 'date') {
+        // Validate date format (ISO 8601, e.g., "2023-10-10T00:00:00Z")
+        try {
+          new Date(item[field]).toISOString();
+        } catch {
+          invalidFields.push(`${field} (invalid date format)`);
+        }
+      }
+    }
+
+    // Check nullable fields
+    for (const field of nullableFields) {
+      if (item[field.name] !== undefined && item[field.name] !== null) {
+        if (typeof item[field.name] !== field.type) {
+          invalidFields.push(`${field.name} (invalid type: ${typeof item[field.name]})`);
+        }
+        // For volume, ensure it's an integer when present
+        if (field.name === 'volume' && typeof item[field.name] === 'number' && !Number.isInteger(item[field.name])) {
+          invalidFields.push(`${field.name} (must be integer)`);
+        }
+      }
+    }
+
+    if (missingFields.length > 0 || invalidFields.length > 0) {
+      const errorDetails = {
+        errorType: 'SchemaValidationError',
+        message: `Invalid Tiingo data: ${missingFields.length > 0 ? `missing fields: ${missingFields.join(', ')}` : ''}${missingFields.length > 0 && invalidFields.length > 0 ? '; ' : ''}${invalidFields.length > 0 ? `invalid fields: ${invalidFields.join(', ')}` : ''}`,
+        ticker,
+        functionName: 'validateTiingoData',
+        timestamp: new Date().toISOString(),
+        apiUrl,
+        missingFields,
+        invalidFields
+      };
+      logger.error(`[Tiingo] Schema validation failed for ${ticker}`, errorDetails);
+      throw new Error(errorDetails.message);
+    }
+  }
+}
+
 async function loadDataForTicker(ticker, startDate, endDate) {
   // Micro Step 5: Ensure robust response parsing with structured error logging
   const apiKey = TIINGO_API_KEY.value();
@@ -113,15 +175,20 @@ async function loadDataForTicker(ticker, startDate, endDate) {
     throw new Error('No data returned from Tiingo');
   }
 
+  // Micro Step 6: Validate parsed data against full BigQuery schema
+  validateTiingoData(data, ticker, url);
+
+  // Map data to BigQuery schema, including ticker_symbol and last_updated
   const rows = data.map(item => ({
-    ticker_symbol: ticker,
-    date: item.date.split('T')[0],
-    close: item.close,
-    high: item.high,
-    low: item.low,
-    open: item.open,
-    volume: item.volume,
-    adj_close: item.adjClose
+    ticker_symbol: ticker, // Derived from input ticker
+    date: item.date.split('T')[0], // Convert to YYYY-MM-DD
+    open: item.open ?? null,
+    high: item.high ?? null,
+    low: item.low ?? null,
+    close: item.close ?? null,
+    volume: item.volume ?? null,
+    adj_close: item.adjClose ?? null,
+    last_updated: new Date().toISOString() // Set to current timestamp
   }));
 
   const datasetId = 'swing_trader_data';
